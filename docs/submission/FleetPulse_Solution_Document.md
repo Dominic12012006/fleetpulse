@@ -122,11 +122,14 @@ The Tabular Gradient-Boosted Model was trained and evaluated on 3,000 ground-tru
 
 | Benchmark Requirement | Target SLA | Measured Empirical Result | Verification Test Artifact |
 | :--- | :---: | :---: | :--- |
-| **Sustained Ingestion** | 100,000+ EPS | **`104,520 EPS`** | `docs/evidence/load-test/load_test_report.md` |
-| **Dashboard Latency** | <2,000 ms | **`12.4 ms (p95)`** | Monitored in WebSocket stream |
-| **API Response Time** | <200 ms (p95) | **`0.051 ms (p95)`** | `tests/performance/benchmark_load.py` |
-| **Broker Outage Recovery** | Zero data loss | **0 events lost** (400 buffered & recovered) | `docs/evidence/chaos/chaos_report.md` |
-| **Test Suite Coverage** | Unit + Integration | **28/28 tests passing (100%)** | `make test` |
+| **Sustained Ingestion** | 100,000+ EPS | **`113,831 EPS`** | [`docs/evidence/load-test/load_test_report.md`](../evidence/load-test/load_test_report.md) |
+| **Dashboard Latency** | <2,000 ms | **`23.85 ms (p95)`** | [`docs/evidence/latency/dashboard_latency_report.md`](../evidence/latency/dashboard_latency_report.md) |
+| **API Response Time** | <200 ms (p95) | **`2.65 ms (p95)`** | [`docs/evidence/api-performance/api_benchmark_report.md`](../evidence/api-performance/api_benchmark_report.md) |
+| **SQL Query Optimization** | Sub-10ms filter | **`0.42 ms` (219x speedup)** | [`docs/evidence/sql/query_optimization_report.md`](../evidence/sql/query_optimization_report.md) |
+| **Broker Outage Recovery** | Zero data loss | **0 events lost** (400 buffered & recovered) | [`docs/evidence/chaos/chaos_report.md`](../evidence/chaos/chaos_report.md) |
+| **Security Auditing** | STRIDE & OWASP | **Zero critical/high vulnerabilities** | [`docs/evidence/security/security_scan_report.md`](../evidence/security/security_scan_report.md) |
+| **Test Suite Coverage** | Unit + Int + BDD | **31/31 tests passing (100%)** | `make test` |
+| **Observability Spec** | Prometheus / Grafana | **12 core SLIs/SLOs instrumented** | [`docs/evidence/observability/observability_spec.md`](../evidence/observability/observability_spec.md) |
 
 ---
 
