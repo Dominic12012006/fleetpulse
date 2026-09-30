@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sidebar } from './components/Sidebar';
-import { TopHeader } from './components/TopHeader';
-import { HeroMetrics } from './components/HeroMetrics';
-import { LoginPage } from './components/LoginPage';
+import { SyncrowaveNavbar } from './components/SyncrowaveNavbar';
+import { SyncrowaveHeader } from './components/SyncrowaveHeader';
+import { SyncrowaveCards } from './components/SyncrowaveCards';
+import { SyncrowaveCharts } from './components/SyncrowaveCharts';
 import { FleetMap } from './components/FleetMap';
 import { RiskQueue } from './components/RiskQueue';
 import { VehicleDetail } from './components/VehicleDetail';
@@ -12,12 +12,14 @@ import { AuditView } from './components/AuditView';
 import { CopilotModal } from './components/CopilotModal';
 import { ScenarioBar } from './components/ScenarioBar';
 import { MaintenanceModal } from './components/MaintenanceModal';
+import { LoginPage } from './components/LoginPage';
 import { api, FleetSummary, Vehicle, Alert, UserSession } from './services/api';
-import { Search, Filter, ShieldCheck, Activity, AlertCircle, ArrowRight } from 'lucide-react';
+import { Search, Filter, ShieldCheck, Activity, ChevronRight } from 'lucide-react';
 
 export function App() {
   const [session, setSession] = useState<UserSession | null>(() => api.getStoredSession());
   const [activeTab, setActiveTab] = useState<string>('command');
+  const [subTab, setSubTab] = useState<string>('summary');
   const [summary, setSummary] = useState<FleetSummary | null>(null);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [alerts, setAlerts] = useState<Alert[]>([]);
@@ -116,7 +118,21 @@ export function App() {
     setSession(null);
   }
 
-  // If not authenticated, show modern Syncrowave LoginPage
+  function handleExportData() {
+    const csvContent = "data:text/csv;charset=utf-8," 
+      + ["VIN,Make,Model,Year,Propulsion,RiskScore,Severity,ActiveDTCs"]
+      .concat(vehicles.map(v => `${v.vin},${v.make},${v.model},${v.year},${v.propulsion_type},${v.current_risk_score},${v.current_severity},"${v.active_dtcs.join(';')}"`))
+      .join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `fleetpulse_telemetry_${Date.now()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  // If not authenticated, show modern LoginPage
   if (!session) {
     return <LoginPage onLoginSuccess={(sess) => setSession(sess)} />;
   }
@@ -124,9 +140,9 @@ export function App() {
   const openAlertsCount = alerts.filter(a => a.status === 'OPEN').length;
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex font-sans antialiased overflow-x-hidden">
-      {/* Syncrowave Vertical Left Sidebar */}
-      <Sidebar
+    <div className="min-h-screen bg-[#F4F6FA] text-slate-800 font-sans antialiased overflow-x-hidden selection:bg-blue-600 selection:text-white">
+      {/* Top Floating Pill Navigation Bar matching Dribbble shot */}
+      <SyncrowaveNavbar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         user={session}
@@ -136,294 +152,280 @@ export function App() {
         onOpenScenarios={() => setIsScenariosOpen(true)}
       />
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 bg-slate-950">
-        {/* Top Header Bar */}
-        <TopHeader
-          summary={summary}
-          user={session}
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          onOpenCopilot={() => setIsCopilotOpen(true)}
-          onOpenScenarios={() => setIsScenariosOpen(true)}
-          openAlertsCount={openAlertsCount}
-        />
+      {/* Main Body Canvas */}
+      <main className="max-w-[1600px] mx-auto px-6 sm:px-8 py-8 space-y-7">
+        <AnimatePresence mode="wait">
+          {/* Main Tab: Overview (matching the Dribbble shot layout) */}
+          {activeTab === 'command' && (
+            <motion.div
+              key="command"
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.18 }}
+              className="space-y-7"
+            >
+              {/* Header Title with Sub-tabs and Export button */}
+              <SyncrowaveHeader
+                title="Sales Overview"
+                subtitle="Let's see the current statistic performance."
+                subTab={subTab}
+                setSubTab={setSubTab}
+                onExportData={handleExportData}
+              />
 
-        {/* Dynamic Page Content with Framer Motion Transition */}
-        <main className="flex-1 p-5 sm:p-6 lg:p-8 space-y-6 max-w-[1600px] w-full mx-auto">
-          <AnimatePresence mode="wait">
-            {/* View 1: Command Centre Dashboard */}
-            {activeTab === 'command' && (
-              <motion.div
-                key="command"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.2 }}
-                className="space-y-6"
-              >
-                {/* Syncrowave Hero Metric Cards */}
-                <HeroMetrics summary={summary} />
+              {/* Row 1: The 3 Highlight Cards (Overall Revenue, Total Insight, Finance Balance) */}
+              <SyncrowaveCards summary={summary} />
 
-                {/* Live Geo-Map & Priority Risk Queue Grid */}
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                  <div className="lg:col-span-7">
-                    <FleetMap
-                      vehicles={vehicles}
-                      onSelectVehicle={(v) => {
-                        setSelectedVehicle(v);
-                        setActiveTab('vehicles');
-                      }}
-                      selectedVehicleId={selectedVehicle?.id}
-                    />
-                  </div>
+              {/* Row 2: The Two Syncrowave Visual Charts (Sales Summary Bubble Matrix + Sales Category Radial Arc) */}
+              <SyncrowaveCharts />
 
-                  <div className="lg:col-span-5">
-                    <RiskQueue
-                      alerts={alerts.slice(0, 6)}
-                      vehicles={vehicles}
-                      onAcknowledge={handleAcknowledgeAlert}
-                      onScheduleService={handleScheduleService}
-                      onSelectVehicle={(v) => {
-                        setSelectedVehicle(v);
-                        setActiveTab('vehicles');
-                      }}
-                    />
-                  </div>
-                </div>
-
-                {/* Connected Fleet Registry Table */}
-                <div className="bg-slate-900/90 border border-slate-800/80 rounded-2xl overflow-hidden shadow-lg p-5 space-y-4 backdrop-blur-md">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div className="flex items-center space-x-2.5">
-                      <div className="p-1.5 rounded-lg bg-sky-500/10 text-sky-400 border border-sky-500/20">
-                        <Activity className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <h2 className="text-sm font-bold text-white tracking-tight">
-                          Connected Telematics Fleet Registry
-                        </h2>
-                        <p className="text-[11px] text-slate-400">
-                          {vehicles.length} Active Connected Units with Real-Time Thermodynamic Sensors
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center space-x-2 text-xs">
-                      <div className="relative">
-                        <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-500" />
-                        <input
-                          type="text"
-                          placeholder="Filter registry..."
-                          value={searchQuery}
-                          onChange={e => setSearchQuery(e.target.value)}
-                          className="bg-slate-950 border border-slate-800 rounded-xl pl-8 pr-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500 w-48 transition-colors"
-                        />
-                      </div>
-
-                      <select
-                        value={severityFilter}
-                        onChange={e => setSeverityFilter(e.target.value)}
-                        className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-sky-500 transition-colors"
-                      >
-                        <option value="">All Severities</option>
-                        <option value="CRITICAL">Critical Only</option>
-                        <option value="HIGH">High Only</option>
-                        <option value="MEDIUM">Medium Only</option>
-                        <option value="LOW">Low Only</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  {/* Table */}
-                  <div className="overflow-x-auto rounded-xl border border-slate-800/80">
-                    <table className="w-full text-left text-xs">
-                      <thead className="bg-slate-950/80 text-slate-400 uppercase text-[10px] font-mono border-b border-slate-800">
-                        <tr>
-                          <th className="px-4 py-3">VIN / Plate</th>
-                          <th className="px-4 py-3">Specification</th>
-                          <th className="px-4 py-3">Propulsion</th>
-                          <th className="px-4 py-3">Priority Score</th>
-                          <th className="px-4 py-3">Severity</th>
-                          <th className="px-4 py-3">Active DTCs</th>
-                          <th className="px-4 py-3">Live Telemetry</th>
-                          <th className="px-4 py-3 text-right">Action</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-800/80 font-mono text-[11px] bg-slate-900/40">
-                        {vehicles.slice(0, 15).map(v => (
-                          <tr key={v.id} className="hover:bg-slate-800/40 transition-colors">
-                            <td className="px-4 py-3 font-bold text-white">
-                              <div>{v.vin}</div>
-                              <div className="text-[10px] text-slate-500 font-normal">{v.license_plate}</div>
-                            </td>
-                            <td className="px-4 py-3 font-sans text-slate-300">
-                              {v.make} {v.model} ({v.year})
-                            </td>
-                            <td className="px-4 py-3">
-                              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800/80 text-sky-300 border border-sky-500/20">
-                                {v.propulsion_type}
-                              </span>
-                            </td>
-                            <td className="px-4 py-3 font-bold text-white">
-                              {v.current_risk_score}
-                            </td>
-                            <td className="px-4 py-3">
-                              <span
-                                className={`px-2 py-0.5 text-[10px] font-bold rounded border ${
-                                  v.current_severity === 'CRITICAL'
-                                    ? 'bg-rose-500/10 text-rose-400 border-rose-500/30 animate-pulse'
-                                    : v.current_severity === 'HIGH'
-                                    ? 'bg-amber-500/10 text-amber-400 border-amber-500/30'
-                                    : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
-                                }`}
-                              >
-                                {v.current_severity}
-                              </span>
-                            </td>
-                            <td className="px-4 py-3">
-                              {v.active_dtcs.length > 0 ? (
-                                <div className="flex space-x-1">
-                                  {v.active_dtcs.map(c => (
-                                    <span key={c} className="px-1.5 py-0.5 bg-rose-500/20 text-rose-300 border border-rose-500/30 rounded text-[9px] font-bold">
-                                      {c}
-                                    </span>
-                                  ))}
-                                </div>
-                              ) : (
-                                <span className="text-slate-600">None</span>
-                              )}
-                            </td>
-                            <td className="px-4 py-3 text-slate-400">
-                              {v.engine_temp_c || v.battery_temp_c || 90}°C • {v.speed_kmh} km/h
-                            </td>
-                            <td className="px-4 py-3 text-right font-sans">
-                              <button
-                                onClick={() => {
-                                  setSelectedVehicle(v);
-                                  setActiveTab('vehicles');
-                                }}
-                                className="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-medium transition-colors"
-                              >
-                                Inspect
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-
-            {/* View 2: Live Telemetry Map Focus */}
-            {activeTab === 'map' && (
-              <motion.div
-                key="map"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.2 }}
-                className="space-y-4"
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-xl font-bold text-white">Full Geographic Telematics</h2>
-                    <p className="text-xs text-slate-400">Real-time GPS coordinates projected across central logistics corridors.</p>
-                  </div>
-                </div>
-                <FleetMap
-                  vehicles={vehicles}
-                  onSelectVehicle={(v) => {
-                    setSelectedVehicle(v);
-                    setActiveTab('vehicles');
-                  }}
-                  selectedVehicleId={selectedVehicle?.id}
-                />
-              </motion.div>
-            )}
-
-            {/* View 3: Full Priority Risk Queue */}
-            {activeTab === 'queue' && (
-              <motion.div
-                key="queue"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.2 }}
-                className="space-y-4"
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-xl font-bold text-white">Priority Risk Queue</h2>
-                    <p className="text-xs text-slate-400">Dynamic sorting powered by Priority = Probability × Impact × Urgency.</p>
-                  </div>
-                </div>
-                <RiskQueue
-                  alerts={alerts}
-                  vehicles={vehicles}
-                  onAcknowledge={handleAcknowledgeAlert}
-                  onScheduleService={handleScheduleService}
-                  onSelectVehicle={(v) => {
-                    setSelectedVehicle(v);
-                    setActiveTab('vehicles');
-                  }}
-                />
-              </motion.div>
-            )}
-
-            {/* View 4: Vehicle Intelligence & Diagnostic Detail */}
-            {activeTab === 'vehicles' && (
-              <motion.div
-                key="vehicles"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.2 }}
-              >
-                {selectedVehicle ? (
-                  <VehicleDetail
-                    vehicle={selectedVehicle}
-                    onBack={() => setActiveTab('command')}
-                    onScheduleService={(v) => handleScheduleService(v)}
+              {/* Row 3: Live Telemetry Geo-Map & Prioritized Risk Queue */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <div className="lg:col-span-7">
+                  <FleetMap
+                    vehicles={vehicles}
+                    onSelectVehicle={(v) => {
+                      setSelectedVehicle(v);
+                      setActiveTab('vehicles');
+                    }}
+                    selectedVehicleId={selectedVehicle?.id}
                   />
-                ) : (
-                  <div className="p-12 text-center text-slate-500 text-sm bg-slate-900 border border-slate-800 rounded-2xl">
-                    Select a vehicle from the Command Centre or Risk Queue to view real-time diagnostics.
+                </div>
+
+                <div className="lg:col-span-5">
+                  <RiskQueue
+                    alerts={alerts.slice(0, 5)}
+                    vehicles={vehicles}
+                    onAcknowledge={handleAcknowledgeAlert}
+                    onScheduleService={handleScheduleService}
+                    onSelectVehicle={(v) => {
+                      setSelectedVehicle(v);
+                      setActiveTab('vehicles');
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Row 4: Connected Telematics Fleet Registry Table */}
+              <div className="bg-white border border-[#E5E9F2] rounded-[24px] p-6 shadow-[0_4px_25px_rgba(0,0,0,0.03)] space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                      <Activity className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold text-slate-900">
+                        Connected Telematics Fleet Registry
+                      </h3>
+                      <p className="text-[11px] text-slate-500">
+                        {vehicles.length} Units Online with Real-Time Thermodynamic Sensors
+                      </p>
+                    </div>
                   </div>
-                )}
-              </motion.div>
-            )}
 
-            {/* View 5: Predictive ML Risk Analytics */}
-            {activeTab === 'analytics' && (
-              <motion.div
-                key="analytics"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.2 }}
-              >
-                <AnalyticsView />
-              </motion.div>
-            )}
+                  <div className="flex items-center space-x-2 text-xs">
+                    <div className="relative">
+                      <Search className="w-3.5 h-3.5 absolute left-3.5 top-2.5 text-slate-400" />
+                      <input
+                        type="text"
+                        placeholder="Search VIN, model, plate..."
+                        value={searchQuery}
+                        onChange={e => setSearchQuery(e.target.value)}
+                        className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-full pl-9 pr-4 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blue-500 w-52 transition-colors"
+                      />
+                    </div>
 
-            {/* View 6: Immutable Audit Trail */}
-            {activeTab === 'audit' && (
-              <motion.div
-                key="audit"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.2 }}
-              >
-                <AuditView />
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </main>
-      </div>
+                    <select
+                      value={severityFilter}
+                      onChange={e => setSeverityFilter(e.target.value)}
+                      className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-full px-3 py-1.5 text-xs text-slate-700 focus:outline-none focus:border-blue-500 transition-colors"
+                    >
+                      <option value="">All Severities</option>
+                      <option value="CRITICAL">Critical Only</option>
+                      <option value="HIGH">High Only</option>
+                      <option value="MEDIUM">Medium Only</option>
+                      <option value="LOW">Low Only</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Table */}
+                <div className="overflow-x-auto rounded-2xl border border-[#F0F3F8]">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-[#F8FAFC] text-slate-500 uppercase text-[10px] font-mono border-b border-[#F0F3F8]">
+                      <tr>
+                        <th className="px-4 py-3">VIN / Plate</th>
+                        <th className="px-4 py-3">Specification</th>
+                        <th className="px-4 py-3">Propulsion</th>
+                        <th className="px-4 py-3">Priority Score</th>
+                        <th className="px-4 py-3">Severity</th>
+                        <th className="px-4 py-3">Active DTCs</th>
+                        <th className="px-4 py-3">Live Telemetry</th>
+                        <th className="px-4 py-3 text-right">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[#F0F3F8] font-mono text-[11px] bg-white">
+                      {vehicles.slice(0, 15).map(v => (
+                        <tr key={v.id} className="hover:bg-slate-50/70 transition-colors">
+                          <td className="px-4 py-3 font-bold text-slate-900">
+                            <div>{v.vin}</div>
+                            <div className="text-[10px] text-slate-400 font-normal">{v.license_plate}</div>
+                          </td>
+                          <td className="px-4 py-3 font-sans text-slate-600 font-medium">
+                            {v.make} {v.model} ({v.year})
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700">
+                              {v.propulsion_type}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 font-black text-slate-900">
+                            {v.current_risk_score}
+                          </td>
+                          <td className="px-4 py-3">
+                            <span
+                              className={`px-2 py-0.5 text-[10px] font-bold rounded-full border ${
+                                v.current_severity === 'CRITICAL'
+                                  ? 'bg-rose-50 text-rose-600 border-rose-200 animate-pulse'
+                                  : v.current_severity === 'HIGH'
+                                  ? 'bg-amber-50 text-amber-600 border-amber-200'
+                                  : 'bg-emerald-50 text-emerald-600 border-emerald-200'
+                              }`}
+                            >
+                              {v.current_severity}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            {v.active_dtcs.length > 0 ? (
+                              <div className="flex space-x-1">
+                                {v.active_dtcs.map(c => (
+                                  <span key={c} className="px-1.5 py-0.5 bg-rose-50 text-rose-600 border border-rose-200 rounded text-[9px] font-bold">
+                                    {c}
+                                  </span>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="text-slate-400 font-normal">None</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-slate-500 font-mono">
+                            {v.engine_temp_c || v.battery_temp_c || 90}°C • {v.speed_kmh} km/h
+                          </td>
+                          <td className="px-4 py-3 text-right font-sans">
+                            <button
+                              onClick={() => {
+                                setSelectedVehicle(v);
+                                setActiveTab('vehicles');
+                              }}
+                              className="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-full text-xs font-semibold transition-colors"
+                            >
+                              Inspect
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Tab 2: Full Screen Live Telemetry Map */}
+          {activeTab === 'map' && (
+            <motion.div
+              key="map"
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.18 }}
+              className="space-y-4"
+            >
+              <FleetMap
+                vehicles={vehicles}
+                onSelectVehicle={(v) => {
+                  setSelectedVehicle(v);
+                  setActiveTab('vehicles');
+                }}
+                selectedVehicleId={selectedVehicle?.id}
+              />
+            </motion.div>
+          )}
+
+          {/* Tab 3: Full Priority Risk Queue */}
+          {activeTab === 'queue' && (
+            <motion.div
+              key="queue"
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.18 }}
+              className="space-y-4"
+            >
+              <RiskQueue
+                alerts={alerts}
+                vehicles={vehicles}
+                onAcknowledge={handleAcknowledgeAlert}
+                onScheduleService={handleScheduleService}
+                onSelectVehicle={(v) => {
+                  setSelectedVehicle(v);
+                  setActiveTab('vehicles');
+                }}
+              />
+            </motion.div>
+          )}
+
+          {/* Tab 4: Vehicle Intelligence Diagnostics */}
+          {activeTab === 'vehicles' && (
+            <motion.div
+              key="vehicles"
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.18 }}
+            >
+              {selectedVehicle ? (
+                <VehicleDetail
+                  vehicle={selectedVehicle}
+                  onBack={() => setActiveTab('command')}
+                  onScheduleService={(v) => handleScheduleService(v)}
+                />
+              ) : (
+                <div className="p-12 text-center text-slate-500 text-sm bg-white border border-[#E5E9F2] rounded-[24px]">
+                  Select a vehicle from the Overview or Risk Queue to inspect diagnostic telemetry.
+                </div>
+              )}
+            </motion.div>
+          )}
+
+          {/* Tab 5: ML Analytics */}
+          {activeTab === 'analytics' && (
+            <motion.div
+              key="analytics"
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.18 }}
+            >
+              <AnalyticsView />
+            </motion.div>
+          )}
+
+          {/* Tab 6: Immutable Audit Trail */}
+          {activeTab === 'audit' && (
+            <motion.div
+              key="audit"
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.18 }}
+            >
+              <AuditView />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </main>
 
       {/* Modals & Overlays */}
       <CopilotModal

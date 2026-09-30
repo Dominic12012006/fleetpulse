@@ -11,7 +11,8 @@ import {
   Lock, 
   Mail, 
   Sparkles,
-  CheckCircle2
+  CheckCircle2,
+  TrendingUp
 } from 'lucide-react';
 import { api, UserSession } from '../services/api';
 
@@ -26,7 +27,7 @@ interface Persona {
   roleLabel: string;
   email: string;
   icon: any;
-  color: string;
+  badgeColor: string;
   accent: string;
   description: string;
 }
@@ -46,31 +47,31 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
       roleLabel: 'Fleet Operations Manager',
       email: 'manager@fleetpulse.io',
       icon: Truck,
-      color: 'bg-sky-500/10 text-sky-400 border-sky-500/30 hover:border-sky-400',
-      accent: 'text-sky-400',
+      badgeColor: 'bg-blue-50 text-blue-700 border-blue-200',
+      accent: 'text-blue-600',
       description: 'Prioritize risk alerts, schedule service work orders, inspect fleet health'
     },
     {
       id: 'dispatcher',
       name: 'Elena Rostova',
       role: 'DISPATCHER',
-      roleLabel: 'Real-time Route Dispatcher',
+      roleLabel: 'Lead Route Dispatcher',
       email: 'dispatcher@fleetpulse.io',
       icon: Navigation,
-      color: 'bg-amber-500/10 text-amber-400 border-amber-500/30 hover:border-amber-400',
-      accent: 'text-amber-400',
-      description: 'Live geographic map tracking, vehicle routing, priority triage'
+      badgeColor: 'bg-amber-50 text-amber-700 border-amber-200',
+      accent: 'text-amber-600',
+      description: 'Live geographic map tracking, vehicle routing, priority dispatch'
     },
     {
       id: 'safety',
       name: 'Marcus Chen',
       role: 'SAFETY_OFFICER',
-      roleLabel: 'Fleet Safety & Compliance',
+      roleLabel: 'Safety & Compliance Officer',
       email: 'safety@fleetpulse.io',
       icon: ShieldCheck,
-      color: 'bg-rose-500/10 text-rose-400 border-rose-500/30 hover:border-rose-400',
-      accent: 'text-rose-400',
-      description: 'Harsh braking auditing, driver behavior risk scoring, tamper-proof logs'
+      badgeColor: 'bg-rose-50 text-rose-700 border-rose-200',
+      accent: 'text-rose-600',
+      description: 'Harsh braking auditing, driver risk scoring, tamper-proof logs'
     },
     {
       id: 'technician',
@@ -79,8 +80,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
       roleLabel: 'Senior Diagnostic Tech',
       email: 'tech@fleetpulse.io',
       icon: Wrench,
-      color: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:border-emerald-400',
-      accent: 'text-emerald-400',
+      badgeColor: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+      accent: 'text-emerald-600',
       description: 'Inspect active diagnostic DTCs, temperature velocity, component health'
     },
     {
@@ -90,9 +91,9 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
       roleLabel: 'Super Administrator',
       email: 'admin@fleetpulse.io',
       icon: Sparkles,
-      color: 'bg-purple-500/10 text-purple-400 border-purple-500/30 hover:border-purple-400',
-      accent: 'text-purple-400',
-      description: 'Full multi-tenant authority, chaos scenario injection, audit oversight'
+      badgeColor: 'bg-purple-50 text-purple-700 border-purple-200',
+      accent: 'text-purple-600',
+      description: 'Full multi-tenant governance, chaos scenario injection, audit oversight'
     }
   ];
 
@@ -117,97 +118,75 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-center items-center p-4 relative overflow-hidden font-sans">
-      {/* Background ambient lighting effects */}
-      <div className="absolute top-[-15%] left-[-10%] w-[600px] h-[600px] bg-sky-600/10 rounded-full blur-[140px] pointer-events-none" />
-      <div className="absolute bottom-[-15%] right-[-10%] w-[600px] h-[600px] bg-indigo-600/10 rounded-full blur-[140px] pointer-events-none" />
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b0f_1px,transparent_1px),linear-gradient(to_bottom,#1e293b0f_1px,transparent_1px)] bg-[size:48px_48px] pointer-events-none" />
+    <div className="min-h-screen bg-[#F4F6FA] text-slate-800 flex flex-col justify-center items-center p-6 relative overflow-hidden font-sans">
+      {/* Background ambient lighting */}
+      <div className="absolute top-[-10%] left-[-5%] w-[500px] h-[500px] bg-blue-100 rounded-full blur-[120px] pointer-events-none opacity-60" />
+      <div className="absolute bottom-[-10%] right-[-5%] w-[500px] h-[500px] bg-indigo-100 rounded-full blur-[120px] pointer-events-none opacity-60" />
 
       <motion.div 
-        initial={{ opacity: 0, y: 14 }}
+        initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.35, ease: 'easeOut' }}
-        className="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-12 gap-8 items-center z-10 my-8"
+        transition={{ duration: 0.25, ease: 'easeOut' }}
+        className="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-12 gap-8 items-center z-10 my-4"
       >
-        {/* Left Side: Brand & Product Highlights */}
+        {/* Left Side: Syncrowave Branding & Value Props */}
         <div className="lg:col-span-6 space-y-6 px-2 sm:px-4">
           <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-sky-500/25 ring-1 ring-white/20">
-              <Activity className="w-6 h-6 text-white animate-pulse" />
+            <div className="w-12 h-12 rounded-2xl bg-black text-white flex items-center justify-center shadow-lg">
+              <Activity className="w-6 h-6 text-blue-400" />
             </div>
             <div>
               <div className="flex items-center space-x-2">
-                <span className="text-2xl font-black tracking-tight text-white font-mono">FleetPulse</span>
-                <span className="px-2 py-0.5 text-[10px] uppercase font-bold tracking-wider bg-sky-500/20 text-sky-300 border border-sky-500/30 rounded-full">
-                  v2.0 Syncrowave
+                <span className="text-2xl font-black tracking-tight text-slate-900 font-sans">Syncrowave</span>
+                <span className="px-2.5 py-0.5 text-[10px] uppercase font-bold tracking-wider bg-blue-50 text-blue-600 border border-blue-200 rounded-full">
+                  FleetPulse v2.2
                 </span>
               </div>
-              <p className="text-xs text-slate-400 font-mono">Connected Vehicle Intelligence Platform</p>
+              <p className="text-xs text-slate-500 font-medium">Connected Vehicle Intelligence Platform</p>
             </div>
           </div>
 
           <div className="space-y-3">
-            <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight leading-tight">
-              Enterprise Telematics with <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-indigo-400">Explainable AI Risk</span>
+            <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight leading-tight">
+              Enterprise Telematics with <span className="text-blue-600">Explainable AI Risk</span>
             </h1>
-            <p className="text-sm text-slate-400 leading-relaxed">
-              Continuously converts 100,000+ streaming vehicle signals into ranked operational impact. Protect uptime with real-time ML risk scoring and bounded AI copilot dispatch.
+            <p className="text-xs sm:text-sm text-slate-500 leading-relaxed font-normal">
+              Converts 100,000+ vehicle streaming events into ranked operational impact. Protect fleet uptime with real-time ML risk scoring and bounded AI copilot dispatch.
             </p>
           </div>
 
-          {/* Value props */}
-          <div className="space-y-3 pt-2">
-            <div className="flex items-start space-x-3 p-3 rounded-xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-md">
-              <div className="p-2 rounded-lg bg-sky-500/10 text-sky-400 border border-sky-500/20">
-                <Activity className="w-4 h-4" />
-              </div>
-              <div>
-                <h4 className="text-xs font-bold text-slate-200">100K+ Streaming Scale (104,520 EPS)</h4>
-                <p className="text-[11px] text-slate-400 mt-0.5">Flink sliding windows with 5-second event-time watermarking and deduplication.</p>
-              </div>
+          {/* Syncrowave Gradient Card Highlight */}
+          <div className="p-6 rounded-[24px] bg-gradient-to-tr from-[#2563EB] via-[#3B82F6] to-[#60A5FA] text-white shadow-xl shadow-blue-500/10 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-blue-100">Live Production Ingestion</span>
+              <span className="px-2.5 py-0.5 rounded-full bg-white/20 text-[11px] font-bold">104,520 EPS</span>
             </div>
-
-            <div className="flex items-start space-x-3 p-3 rounded-xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-md">
-              <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                <CheckCircle2 className="w-4 h-4" />
-              </div>
-              <div>
-                <h4 className="text-xs font-bold text-slate-200">Decision Priority Formula</h4>
-                <p className="text-[11px] text-slate-400 mt-0.5">Priority = Probability × Impact × Urgency backed by Gradient-Boosted Tabular ML.</p>
-              </div>
-            </div>
-
-            <div className="flex items-start space-x-3 p-3 rounded-xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-md">
-              <div className="p-2 rounded-lg bg-rose-500/10 text-rose-400 border border-rose-500/20">
-                <Flame className="w-4 h-4" />
-              </div>
-              <div>
-                <h4 className="text-xs font-bold text-slate-200">Zero Data Loss Chaos Resilience</h4>
-                <p className="text-[11px] text-slate-400 mt-0.5">Automated backpressure buffer preserves events during broker failure scenarios.</p>
-              </div>
+            <div className="text-2xl font-black">99.4% Fleet Reliability</div>
+            <div className="text-xs text-blue-100/90 leading-relaxed">
+              Priority = RiskProbability × ImpactExposure × UrgencyFactor validated by Gradient-Boosted Tabular ML.
             </div>
           </div>
         </div>
 
-        {/* Right Side: Role-Based Quick Access & Login */}
-        <div className="lg:col-span-6 bg-slate-900/90 border border-slate-800/90 rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-xl relative">
+        {/* Right Side: Role-Based Quick Access & Login Card */}
+        <div className="lg:col-span-6 bg-white border border-[#E5E9F2] rounded-[28px] p-6 sm:p-8 shadow-[0_4px_30px_rgba(0,0,0,0.04)] relative">
           <div className="mb-6">
-            <h2 className="text-lg font-bold text-white tracking-tight">Select Role or Sign In</h2>
-            <p className="text-xs text-slate-400 mt-1">
-              Choose an operator persona for instant 1-click evaluation, or sign in with credentials.
+            <h2 className="text-xl font-bold text-slate-900 tracking-tight">Select Persona or Sign In</h2>
+            <p className="text-xs text-slate-500 mt-1">
+              Select an operator persona for instant 1-click evaluation, or sign in below.
             </p>
           </div>
 
           {error && (
-            <div className="mb-5 p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs">
+            <div className="mb-5 p-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-600 text-xs font-medium">
               {error}
             </div>
           )}
 
           {/* Quick Persona Selector */}
           <div className="space-y-2 mb-6">
-            <div className="text-[10px] font-mono uppercase tracking-wider text-slate-500 font-semibold px-1">
-              Quick 1-Click Role Switcher
+            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-1">
+              1-Click Operator Persona Switcher
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
               {personas.map((p) => {
@@ -218,22 +197,22 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                     key={p.id}
                     type="button"
                     onClick={() => handleSelectPersona(p)}
-                    className={`p-3 rounded-2xl border text-left transition-all relative group flex flex-col justify-between ${
+                    className={`p-3.5 rounded-2xl border text-left transition-all relative flex flex-col justify-between ${
                       isCurrent 
-                        ? `${p.color} ring-2 ring-sky-500/50 shadow-md` 
-                        : 'bg-slate-950/60 border-slate-800 hover:border-slate-700 text-slate-300'
+                        ? `${p.badgeColor} ring-2 ring-blue-500/40 shadow-sm` 
+                        : 'bg-[#F8FAFC] border-[#E8ECF2] hover:border-slate-300 text-slate-700'
                     }`}
                   >
                     <div className="flex items-center space-x-2.5">
-                      <div className={`p-1.5 rounded-lg bg-slate-800/80 ${p.accent}`}>
+                      <div className={`p-2 rounded-xl bg-white shadow-xs ${p.accent}`}>
                         <Icon className="w-4 h-4" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="text-xs font-bold text-white truncate">{p.name}</div>
-                        <div className="text-[10px] text-slate-400 truncate">{p.roleLabel}</div>
+                        <div className="text-xs font-bold text-slate-900 truncate">{p.name}</div>
+                        <div className="text-[10px] text-slate-500 truncate">{p.roleLabel}</div>
                       </div>
                     </div>
-                    <div className="text-[10px] text-slate-500 mt-2 line-clamp-2">
+                    <div className="text-[10px] text-slate-400 mt-2 line-clamp-2">
                       {p.description}
                     </div>
                   </button>
@@ -245,41 +224,41 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
           {/* Divider */}
           <div className="relative my-5">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-slate-800"></div>
+              <div className="w-full border-t border-[#E8ECF2]"></div>
             </div>
-            <div className="relative flex justify-center text-[11px] uppercase tracking-wider font-mono">
-              <span className="bg-slate-900 px-3 text-slate-500">Or Custom Credentials</span>
+            <div className="relative flex justify-center text-[10px] uppercase tracking-wider font-semibold">
+              <span className="bg-white px-3 text-slate-400">Or Manual Credentials</span>
             </div>
           </div>
 
-          {/* Manual Login Form */}
-          <form onSubmit={(e) => { e.preventDefault(); handleLogin(); }} className="space-y-4">
+          {/* Manual Form */}
+          <form onSubmit={(e) => { e.preventDefault(); handleLogin(); }} className="space-y-3.5">
             <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1.5">Email Address</label>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Email Address</label>
               <div className="relative">
-                <Mail className="w-4 h-4 absolute left-3 top-3 text-slate-500" />
+                <Mail className="w-4 h-4 absolute left-3.5 top-3 text-slate-400" />
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   placeholder="operator@fleetpulse.io"
-                  className="w-full bg-slate-950/80 border border-slate-800 rounded-xl pl-9 pr-4 py-2.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-sky-500 transition-colors"
+                  className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl pl-10 pr-4 py-2.5 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-500 transition-colors"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1.5">Password</label>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Password</label>
               <div className="relative">
-                <Lock className="w-4 h-4 absolute left-3 top-3 text-slate-500" />
+                <Lock className="w-4 h-4 absolute left-3.5 top-3 text-slate-400" />
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   placeholder="••••••••••••"
-                  className="w-full bg-slate-950/80 border border-slate-800 rounded-xl pl-9 pr-4 py-2.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-sky-500 transition-colors"
+                  className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl pl-10 pr-4 py-2.5 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-500 transition-colors"
                 />
               </div>
             </div>
@@ -287,15 +266,15 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white font-semibold text-xs tracking-wide shadow-lg shadow-sky-500/20 flex items-center justify-center space-x-2 transition-all transform active:scale-[0.99] disabled:opacity-50"
+              className="w-full py-3 px-4 rounded-xl bg-slate-900 hover:bg-black text-white font-semibold text-xs tracking-wide shadow-md flex items-center justify-center space-x-2 transition-all transform active:scale-[0.99] disabled:opacity-50"
             >
-              <span>{loading ? 'Authenticating...' : `Enter Platform as ${selectedRole.replace('_', ' ')}`}</span>
+              <span>{loading ? 'Authenticating...' : `Sign in as ${selectedRole.replace('_', ' ')}`}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </form>
 
-          {/* Demo Tenant Badge */}
-          <div className="mt-5 pt-4 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-500 font-mono">
+          {/* Tenant Badge Footer */}
+          <div className="mt-5 pt-4 border-t border-[#F0F3F8] flex items-center justify-between text-[11px] text-slate-400 font-medium">
             <span>Tenant: Enterprise Fleet Logistics</span>
             <span>Security: JWT HS256 + RBAC</span>
           </div>
