@@ -155,23 +155,25 @@ export const FleetMap: React.FC<FleetMapProps> = ({
 
       if (isCritical) {
         fillColor = '#EF4444';
-        radius = 9;
-        fillOpacity = 0.95;
+        radius = 8;
+        fillOpacity = 1.0;
+        strokeColor = '#FFFFFF';
 
-        // Render an animated pulse halo ring for CRITICAL vehicles
-        const pulseRing = L.circleMarker([v.lat, v.lon], {
-          radius: 16,
+        // Static outer halo ring for critical grounding (pinned to vehicle coordinates)
+        const outerHalo = L.circleMarker([v.lat, v.lon], {
+          radius: 14,
           fillColor: '#EF4444',
-          fillOpacity: 0.25,
+          fillOpacity: 0.2,
           color: '#DC2626',
           weight: 1.5,
-          className: 'animate-ping'
+          opacity: 0.7
         });
-        pulseRing.addTo(markersLayerRef.current!);
+        outerHalo.addTo(markersLayerRef.current!);
       } else if (isHigh) {
         fillColor = '#F59E0B';
-        radius = 7;
+        radius = 6.5;
         fillOpacity = 0.9;
+        strokeColor = '#FFFFFF';
       }
 
       if (isSelected) {
