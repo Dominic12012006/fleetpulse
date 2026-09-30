@@ -2,11 +2,10 @@
 FleetPulse Backend API — Live WebSocket Stream and Scenario Injection Router
 """
 
-import asyncio
-from datetime import datetime, timezone
 import json
 import logging
-from typing import List, Set
+from datetime import datetime, timezone
+
 from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
 
@@ -19,7 +18,7 @@ router = APIRouter(tags=["Live Stream & Scenarios"])
 
 class ConnectionManager:
     def __init__(self):
-        self.active_connections: Set[WebSocket] = set()
+        self.active_connections: set[WebSocket] = set()
 
     async def connect(self, websocket: WebSocket):
         await websocket.accept()

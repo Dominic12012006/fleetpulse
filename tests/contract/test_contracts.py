@@ -4,8 +4,9 @@ Verifies that API OpenAPI contracts match frontend schema expectations and speci
 """
 
 from fastapi.testclient import TestClient
+
 from apps.api.main import app
-from packages.schemas.events import CanonicalTelemetryEvent, EventType, PropulsionType
+from packages.schemas.events import CanonicalTelemetryEvent, PropulsionType
 
 
 def test_openapi_contract_schema():

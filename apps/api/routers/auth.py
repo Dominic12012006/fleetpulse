@@ -2,12 +2,12 @@
 FleetPulse Backend API — Authentication Router
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, EmailStr
+from fastapi import APIRouter, Depends
+from pydantic import BaseModel
 
 from apps.api.core.config import settings
 from apps.api.core.dependencies import UserContext, get_current_user
-from apps.api.core.security import create_access_token, verify_password
+from apps.api.core.security import create_access_token
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 

@@ -3,9 +3,10 @@ FleetPulse — Multi-OEM Raw Payload Schemas and Normalizers
 Supports heterogeneous telemetry feeds (OEM_A, OEM_B, OEM_C) into CanonicalTelemetryEvent.
 """
 
-from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
 import uuid
+from datetime import datetime, timezone
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 from packages.schemas.events import CanonicalTelemetryEvent, EventType, PropulsionType
@@ -18,10 +19,10 @@ class OEMA_Payload(BaseModel):
     vehicle_ident: str = Field(..., description="17-char VIN")
     tenant_code: str
     telemetry_epoch: float = Field(..., description="UNIX epoch in seconds")
-    gps: Dict[str, float] = Field(..., description="{'latitude': float, 'longitude': float, 'speed_kph': float, 'heading': float}")
-    sensors: Dict[str, Any] = Field(..., description="{'coolant_celsius': float, 'odometer_total': float, 'engine_rpm': float, 'fuel_ratio': float}")
-    diagnostics: Optional[Dict[str, Any]] = Field(default_factory=dict, description="{'fault_codes': List[str], 'mil_active': bool}")
-    ev_pack: Optional[Dict[str, float]] = Field(default=None, description="Optional battery pack data")
+    gps: dict[str, float] = Field(..., description="{'latitude': float, 'longitude': float, 'speed_kph': float, 'heading': float}")
+    sensors: dict[str, Any] = Field(..., description="{'coolant_celsius': float, 'odometer_total': float, 'engine_rpm': float, 'fuel_ratio': float}")
+    diagnostics: dict[str, Any] | None = Field(default_factory=dict, description="{'fault_codes': List[str], 'mil_active': bool}")
+    ev_pack: dict[str, float] | None = Field(default=None, description="Optional battery pack data")
 
 
 class OEMB_Payload(BaseModel):
@@ -34,13 +35,13 @@ class OEMB_Payload(BaseModel):
     pos_lat: float
     pos_lon: float
     spd_kmh: float
-    heading: Optional[float] = 0.0
-    eng_temp: Optional[float] = None
+    heading: float | None = 0.0
+    eng_temp: float | None = None
     odo_km: float
-    dtcs: Optional[str] = ""  # Comma-separated like "P0128,P0300"
-    prop_type: Optional[str] = "ICE"
-    soc: Optional[float] = None
-    fuel_level: Optional[float] = None
+    dtcs: str | None = ""  # Comma-separated like "P0128,P0300"
+    prop_type: str | None = "ICE"
+    soc: float | None = None
+    fuel_level: float | None = None
 
 
 class OEMC_Payload(BaseModel):
@@ -50,16 +51,16 @@ class OEMC_Payload(BaseModel):
     vinCode: str
     tenantId: str
     recordedAtMs: int
-    coordinates: List[float]  # [longitude, latitude]
+    coordinates: list[float]  # [longitude, latitude]
     speedKph: float
     batterySocPercent: float
     packTempCelsius: float
     odometerKm: float
-    activeDtcList: List[str] = Field(default_factory=list)
-    chargingStatus: Optional[str] = "DISCHARGING"
+    activeDtcList: list[str] = Field(default_factory=list)
+    chargingStatus: str | None = "DISCHARGING"
 
 
-def normalize_oem_payload(oem: str, payload: Dict[str, Any], vehicle_id: Optional[str] = None) -> CanonicalTelemetryEvent:
+def normalize_oem_payload(oem: str, payload: dict[str, Any], vehicle_id: str | None = None) -> CanonicalTelemetryEvent:
     """
     Transforms any raw OEM payload dictionary into a CanonicalTelemetryEvent.
     Raises ValueError on invalid schema.

@@ -2,7 +2,8 @@
 FleetPulse Backend API — Historical Analytics & Model Metrics Router (ClickHouse Backed)
 """
 
-from typing import Any, Dict, List
+from typing import Any
+
 from fastapi import APIRouter, Depends
 
 from apps.api.core.dependencies import UserContext, get_current_user
@@ -15,7 +16,7 @@ router = APIRouter(prefix="/analytics", tags=["Historical Analytics"])
 async def get_risk_distribution(user: UserContext = Depends(get_current_user)):
     vehicles = [v for v in store.vehicles.values() if v["tenant_id"] == user.tenant_id]
     total = len(vehicles)
-    
+
     low = sum(1 for v in vehicles if v["current_risk_score"] < 30.0)
     medium = sum(1 for v in vehicles if 30.0 <= v["current_risk_score"] < 60.0)
     high = sum(1 for v in vehicles if 60.0 <= v["current_risk_score"] < 80.0)
@@ -49,7 +50,7 @@ async def get_maintenance_lead_time(user: UserContext = Depends(get_current_user
 @router.get("/oem-breakdown")
 async def get_oem_breakdown(user: UserContext = Depends(get_current_user)):
     vehicles = [v for v in store.vehicles.values() if v["tenant_id"] == user.tenant_id]
-    by_oem: Dict[str, Dict[str, Any]] = {}
+    by_oem: dict[str, dict[str, Any]] = {}
     for v in vehicles:
         oem = v["oem"]
         if oem not in by_oem:

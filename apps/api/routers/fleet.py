@@ -2,7 +2,6 @@
 FleetPulse Backend API — Fleet & Vehicle Endpoints
 """
 
-from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from apps.api.core.dependencies import UserContext, get_current_user
@@ -21,9 +20,9 @@ async def get_fleet_summary(user: UserContext = Depends(get_current_user)):
 async def list_vehicles(
     limit: int = Query(50, ge=1, le=500),
     offset: int = Query(0, ge=0),
-    severity: Optional[str] = Query(None, description="LOW, MEDIUM, HIGH, CRITICAL"),
-    status: Optional[str] = Query(None, description="ACTIVE, IN_SERVICE, GROUNDED"),
-    query: Optional[str] = Query(None, description="Search by VIN, make, model, license plate"),
+    severity: str | None = Query(None, description="LOW, MEDIUM, HIGH, CRITICAL"),
+    status: str | None = Query(None, description="ACTIVE, IN_SERVICE, GROUNDED"),
+    query: str | None = Query(None, description="Search by VIN, make, model, license plate"),
     user: UserContext = Depends(get_current_user)
 ):
     vehicles, total = store.get_vehicles(

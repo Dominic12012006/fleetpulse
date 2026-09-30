@@ -2,8 +2,9 @@
 FleetPulse Backend API — Main Application Entrypoint
 """
 
-from datetime import datetime, timezone
 import logging
+from datetime import datetime, timezone
+
 from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -11,7 +12,16 @@ from prometheus_client import CONTENT_TYPE_LATEST, Counter, Histogram, generate_
 from starlette.responses import Response
 
 from apps.api.core.config import settings
-from apps.api.routers import alerts, analytics, audit, auth, copilot, fleet, live, maintenance
+from apps.api.routers import (
+    alerts,
+    analytics,
+    audit,
+    auth,
+    copilot,
+    fleet,
+    live,
+    maintenance,
+)
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("fleetpulse.api")

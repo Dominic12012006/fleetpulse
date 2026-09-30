@@ -3,14 +3,14 @@ FleetPulse Simulator — Fault and Anomaly Scenarios
 Handles targeted failure injection, duplicate storms, out-of-order jitter, and burst traffic.
 """
 
+import random
+import uuid
 from datetime import datetime, timedelta, timezone
 from enum import Enum
-import random
-from typing import Any, Dict, List, Optional
-import uuid
+from typing import Any
 
-from packages.schemas.events import CanonicalTelemetryEvent, EventType, PropulsionType
 from apps.simulator.physics import VehiclePhysicsState
+from packages.schemas.events import CanonicalTelemetryEvent
 
 
 class ScenarioName(str, Enum):
@@ -45,12 +45,12 @@ class ScenarioEngine:
 
     def generate_event(
         self,
-        vehicle_meta: Dict[str, Any],
+        vehicle_meta: dict[str, Any],
         physics_state: VehiclePhysicsState,
         scenario: ScenarioName = ScenarioName.NORMAL,
         dt_seconds: float = 1.0,
-        now: Optional[datetime] = None
-    ) -> List[Dict[str, Any]]:
+        now: datetime | None = None
+    ) -> list[dict[str, Any]]:
         """
         Advances physics and generates one or more telemetry events (handles duplicates and out-of-order).
         Returns a list of event payloads.

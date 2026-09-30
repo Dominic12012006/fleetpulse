@@ -3,10 +3,11 @@ FleetPulse — Domain & API Data Transfer Objects (DTOs)
 Covers Alerts, Vehicles, Maintenance Actions, Risk Explanations, and Audit Logs.
 """
 
+import uuid
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Any, Dict, List, Optional
-import uuid
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 from packages.schemas.events import PropulsionType, SeverityLevel, VehicleStatus
@@ -37,9 +38,9 @@ class ActionPriority(str, Enum):
 class ContributingFactor(BaseModel):
     factor: str
     weight: float
-    detail: Optional[str] = None
-    value: Optional[str] = None
-    threshold: Optional[str] = None
+    detail: str | None = None
+    value: str | None = None
+    threshold: str | None = None
 
 
 class RiskExplanation(BaseModel):
@@ -49,26 +50,26 @@ class RiskExplanation(BaseModel):
     urgency_factor: float = Field(..., ge=1.0, le=5.0, description="Physics rate-of-change / urgency factor")
     severity: SeverityLevel
     model_version: str = "v1.0-baseline"
-    contributing_factors: List[ContributingFactor] = Field(default_factory=list)
-    recommended_action: Optional[str] = None
+    contributing_factors: list[ContributingFactor] = Field(default_factory=list)
+    recommended_action: str | None = None
 
 
 class AlertDTO(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     tenant_id: str
     vehicle_id: str
-    vin: Optional[str] = None
+    vin: str | None = None
     alert_type: str
     severity: SeverityLevel
     priority_score: float
     risk_probability: float
     impact_exposure: float
     urgency_factor: float
-    contributing_factors: List[ContributingFactor] = Field(default_factory=list)
-    dtc_codes: List[str] = Field(default_factory=list)
+    contributing_factors: list[ContributingFactor] = Field(default_factory=list)
+    dtc_codes: list[str] = Field(default_factory=list)
     status: str = "OPEN"  # OPEN, ACKNOWLEDGED, RESOLVED
-    acknowledged_by: Optional[str] = None
-    acknowledged_at: Optional[datetime] = None
+    acknowledged_by: str | None = None
+    acknowledged_at: datetime | None = None
     event_time: datetime
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
@@ -76,7 +77,7 @@ class AlertDTO(BaseModel):
 class VehicleSummaryDTO(BaseModel):
     id: str
     tenant_id: str
-    fleet_id: Optional[str] = None
+    fleet_id: str | None = None
     vin: str
     license_plate: str
     make: str
@@ -87,13 +88,13 @@ class VehicleSummaryDTO(BaseModel):
     status: VehicleStatus
     current_risk_score: float
     current_severity: SeverityLevel
-    active_dtcs: List[str] = Field(default_factory=list)
+    active_dtcs: list[str] = Field(default_factory=list)
     lat: float
     lon: float
     speed_kmh: float
-    soc_pct: Optional[float] = None
-    engine_temp_c: Optional[float] = None
-    last_telemetry_at: Optional[datetime] = None
+    soc_pct: float | None = None
+    engine_temp_c: float | None = None
+    last_telemetry_at: datetime | None = None
 
 
 class FleetSummaryDTO(BaseModel):
@@ -111,10 +112,10 @@ class FleetSummaryDTO(BaseModel):
 
 class MaintenanceActionCreateRequest(BaseModel):
     vehicle_id: str
-    alert_id: Optional[str] = None
+    alert_id: str | None = None
     action_type: ActionType
     priority: ActionPriority = ActionPriority.ROUTINE
-    notes: Optional[str] = None
+    notes: str | None = None
     scheduled_for: datetime
 
 
@@ -122,24 +123,24 @@ class MaintenanceActionDTO(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     tenant_id: str
     vehicle_id: str
-    alert_id: Optional[str] = None
-    scheduled_by: Optional[str] = None
+    alert_id: str | None = None
+    scheduled_by: str | None = None
     action_type: ActionType
     status: ActionStatus = ActionStatus.SCHEDULED
     priority: ActionPriority
-    notes: Optional[str] = None
+    notes: str | None = None
     scheduled_for: datetime
-    completed_at: Optional[datetime] = None
+    completed_at: datetime | None = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class AuditLogDTO(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     tenant_id: str
-    user_id: Optional[str] = None
+    user_id: str | None = None
     action: str
     entity_type: str
     entity_id: str
-    details: Dict[str, Any] = Field(default_factory=dict)
-    ip_address: Optional[str] = None
+    details: dict[str, Any] = Field(default_factory=dict)
+    ip_address: str | None = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))

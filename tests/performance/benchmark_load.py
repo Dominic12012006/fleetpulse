@@ -3,15 +3,16 @@ FleetPulse — High-Throughput Load Benchmark (100K+ Events/Sec Ingestion & Proc
 Measures actual sustained throughput, latency distribution (p50, p95, p99), and lag under load.
 """
 
-from datetime import datetime, timezone
 import json
 import logging
 import os
 import time
-from typing import Any, Dict, List
+from datetime import datetime, timezone
+from typing import Any
+
 import numpy as np
 
-from packages.schemas.events import CanonicalTelemetryEvent, EventType, PropulsionType
+from packages.schemas.events import CanonicalTelemetryEvent, PropulsionType
 from services.stream_processor.processor import StreamProcessorService
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
@@ -24,7 +25,7 @@ def run_high_throughput_benchmark(
     target_events: int = 300000,
     batch_size: int = 10000,
     num_vehicles: int = 100000
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Executes a high-throughput streaming ingestion and windowing benchmark.
     Tests sustained 100K+ events/sec and 3x burst capability.
@@ -36,7 +37,7 @@ def run_high_throughput_benchmark(
     vehicle_ids = [f"v-{i:06d}" for i in range(min(num_vehicles, 50000))]
     v_count = len(vehicle_ids)
 
-    latencies_ms: List[float] = []
+    latencies_ms: list[float] = []
     start_time = time.perf_counter()
     events_processed = 0
 
@@ -47,8 +48,6 @@ def run_high_throughput_benchmark(
     num_batches = target_events // batch_size
 
     for b in range(num_batches):
-        t_batch_start = time.perf_counter()
-        
         for i in range(batch_size):
             v_id = vehicle_ids[(b * batch_size + i) % v_count]
             event_id = f"evt-{b}-{i}"
@@ -71,7 +70,7 @@ def run_high_throughput_benchmark(
 
             # Ingest through stream processor
             t_event_start = time.perf_counter()
-            features = processor.process_event(event)
+            processor.process_event(event)
             t_event_end = time.perf_counter()
 
             if (b * batch_size + i) % 1000 == 0:
@@ -105,7 +104,7 @@ def run_high_throughput_benchmark(
     return report
 
 
-def _write_load_test_report(report: Dict[str, Any]) -> None:
+def _write_load_test_report(report: dict[str, Any]) -> None:
     os.makedirs(os.path.dirname(REPORT_PATH), exist_ok=True)
     md = f"""# FleetPulse Load & Throughput Benchmark Report
 

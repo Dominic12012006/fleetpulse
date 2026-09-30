@@ -5,7 +5,6 @@ Simulates realistic vehicle state transitions for ICE, EV, and Hybrid powertrain
 
 import math
 import random
-from typing import Dict, List, Optional, Tuple
 
 from packages.schemas.events import EventType, PropulsionType
 
@@ -42,14 +41,14 @@ class VehiclePhysicsState:
         self.battery_voltage = 380.0 if propulsion_type in (PropulsionType.EV, PropulsionType.HYBRID) else 12.6
 
         # Diagnostics & Faults
-        self.active_dtcs: List[str] = []
+        self.active_dtcs: list[str] = []
         self.is_overheating: bool = False
         self.is_rapid_discharging: bool = False
         self.is_brake_faulted: bool = False
         self.harsh_braking_events: int = 0
         self.mileage_since_last_service: float = random.uniform(500.0, 18000.0)
 
-    def step(self, dt_seconds: float = 1.0) -> Tuple[EventType, bool]:
+    def step(self, dt_seconds: float = 1.0) -> tuple[EventType, bool]:
         """
         Advances vehicle state by dt_seconds.
         Returns (EventType, is_anomaly).

@@ -5,7 +5,7 @@ Unit Tests for FleetPulse Simulator and Physics Engine
 from apps.simulator.generator import FleetGenerator, generate_synthetic_vin
 from apps.simulator.physics import VehiclePhysicsState
 from apps.simulator.scenarios import ScenarioEngine, ScenarioName
-from packages.schemas.events import EventType, PropulsionType
+from packages.schemas.events import PropulsionType
 
 
 def test_synthetic_vin_generation():
@@ -40,7 +40,7 @@ def test_ice_physics_step():
         odometer_km=5000.0
     )
     initial_odo = state.odometer_km
-    event_type, is_anomaly = state.step(dt_seconds=5.0)
+    _event_type, is_anomaly = state.step(dt_seconds=5.0)
 
     assert state.odometer_km >= initial_odo
     assert state.engine_temp_c is not None

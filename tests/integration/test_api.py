@@ -3,7 +3,7 @@ Integration Tests for FleetPulse Backend API
 """
 
 import pytest
-from httpx import AsyncClient, ASGITransport
+from httpx import ASGITransport, AsyncClient
 
 from apps.api.main import app
 

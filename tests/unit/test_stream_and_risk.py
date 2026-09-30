@@ -3,10 +3,14 @@ Unit Tests for Stream Processor, Normalizer, and Risk Engine
 """
 
 from datetime import datetime, timedelta, timezone
-from packages.schemas.events import CanonicalTelemetryEvent, EventType, PropulsionType, SeverityLevel
+
+from packages.schemas.events import (
+    CanonicalTelemetryEvent,
+    SeverityLevel,
+)
 from services.normalizer.normalizer import NormalizerService
-from services.stream_processor.processor import StreamProcessorService
 from services.risk_engine.engine import BaselineRiskEngine
+from services.stream_processor.processor import StreamProcessorService
 
 
 def test_normalizer_service():

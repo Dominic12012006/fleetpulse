@@ -3,9 +3,8 @@ FleetPulse — Predictive Risk Engine & Baseline Scoring Model
 Implements Priority = RiskProbability x ImpactExposure x UrgencyFactor with explainability.
 """
 
-from datetime import datetime, timezone
 import logging
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from packages.schemas.events import SeverityLevel
 from packages.schemas.models import ContributingFactor, RiskExplanation
@@ -33,7 +32,7 @@ class BaselineRiskEngine:
     def __init__(self, model_version: str = "v1.0-baseline"):
         self.model_version = model_version
 
-    def evaluate(self, features: Dict[str, Any], vehicle_class_weight: float = 5.0) -> RiskExplanation:
+    def evaluate(self, features: dict[str, Any], vehicle_class_weight: float = 5.0) -> RiskExplanation:
         """
         Calculates PriorityScore = (P * I * U) mapped to [0, 100].
         Generates structured explainability factors.
@@ -45,8 +44,8 @@ class BaselineRiskEngine:
         soc_discharge = features.get("soc_discharge_per_min", 0.0)
         odometer_km = features.get("odometer_km", 10000.0)
 
-        contributing_factors: List[ContributingFactor] = []
-        prob_components: List[float] = []
+        contributing_factors: list[ContributingFactor] = []
+        prob_components: list[float] = []
 
         # 1. Diagnostic Trouble Codes (DTCs)
         dtc_risk = 0.0

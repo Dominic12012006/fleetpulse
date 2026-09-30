@@ -3,12 +3,17 @@ Unit Tests for FleetPulse Canonical and OEM Schemas
 """
 
 from datetime import datetime, timezone
+
 import pytest
 from pydantic import ValidationError
 
-from packages.schemas.events import CanonicalTelemetryEvent, EventType, PropulsionType, SeverityLevel
+from packages.schemas.events import (
+    CanonicalTelemetryEvent,
+    PropulsionType,
+    SeverityLevel,
+)
+from packages.schemas.models import ContributingFactor, RiskExplanation
 from packages.schemas.oem import normalize_oem_payload
-from packages.schemas.models import RiskExplanation, ContributingFactor
 
 
 def test_canonical_event_valid():

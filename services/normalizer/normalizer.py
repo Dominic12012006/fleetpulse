@@ -3,10 +3,9 @@ FleetPulse — Multi-OEM Telemetry Normalizer Service
 Converts heterogeneous OEM payloads into CanonicalTelemetryEvents and isolates corrupt data to quarantine.
 """
 
-from datetime import datetime, timezone
-import json
 import logging
-from typing import Any, Dict, List, Optional, Tuple
+from datetime import datetime, timezone
+from typing import Any
 
 from packages.schemas.events import CanonicalTelemetryEvent
 from packages.schemas.oem import normalize_oem_payload
@@ -19,9 +18,9 @@ class NormalizerService:
     def __init__(self):
         self.processed_count = 0
         self.quarantine_count = 0
-        self.quarantine_records: List[Dict[str, Any]] = []
+        self.quarantine_records: list[dict[str, Any]] = []
 
-    def process_raw_payload(self, raw_data: Dict[str, Any]) -> Tuple[Optional[CanonicalTelemetryEvent], Optional[Dict[str, Any]]]:
+    def process_raw_payload(self, raw_data: dict[str, Any]) -> tuple[CanonicalTelemetryEvent | None, dict[str, Any] | None]:
         """
         Normalizes a single raw payload.
         Returns (canonical_event, None) on success, or (None, quarantine_record) on failure.
@@ -44,14 +43,14 @@ class NormalizerService:
         except Exception as exc:
             quarantine = self._create_quarantine_record(
                 raw_data=raw_data,
-                reason=f"Schema normalization failed for OEM '{oem}': {str(exc)}"
+                reason=f"Schema normalization failed for OEM '{oem}': {exc!s}"
             )
             self.quarantine_count += 1
             self.quarantine_records.append(quarantine)
             logger.warning(f"Quarantined event: {quarantine['reason']}")
             return None, quarantine
 
-    def process_batch(self, batch: List[Dict[str, Any]]) -> Tuple[List[CanonicalTelemetryEvent], List[Dict[str, Any]]]:
+    def process_batch(self, batch: list[dict[str, Any]]) -> tuple[list[CanonicalTelemetryEvent], list[dict[str, Any]]]:
         """
         Normalizes a batch of raw telemetry events.
         """
@@ -67,7 +66,7 @@ class NormalizerService:
 
         return canonical_batch, quarantine_batch
 
-    def _create_quarantine_record(self, raw_data: Dict[str, Any], reason: str) -> Dict[str, Any]:
+    def _create_quarantine_record(self, raw_data: dict[str, Any], reason: str) -> dict[str, Any]:
         return {
             "quarantined_at": datetime.now(timezone.utc).isoformat(),
             "reason": reason,

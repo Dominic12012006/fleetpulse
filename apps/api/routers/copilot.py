@@ -3,14 +3,14 @@ FleetPulse Backend API — Bounded Fleet Copilot Router
 Enforces strict tool allowlist, read-only defaults, explicit write confirmation, and tamper-proof audit trails.
 """
 
-from datetime import datetime, timezone
-import json
 import logging
-from typing import Any, Dict, List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, Field
+from datetime import datetime, timezone
+from typing import Any
 
-from apps.api.core.dependencies import UserContext, get_current_user, require_role
+from fastapi import APIRouter, Depends
+from pydantic import BaseModel
+
+from apps.api.core.dependencies import UserContext, require_role
 from apps.api.data.store import store
 from packages.schemas.models import (
     ActionPriority,
@@ -35,16 +35,16 @@ ALLOWED_TOOLS = {
 class CopilotQueryRequest(BaseModel):
     query: str
     confirm_action: bool = False
-    proposed_tool: Optional[str] = None
-    tool_arguments: Optional[Dict[str, Any]] = None
+    proposed_tool: str | None = None
+    tool_arguments: dict[str, Any] | None = None
 
 
 class CopilotQueryResponse(BaseModel):
     answer: str
-    tool_used: Optional[str] = None
-    tool_result: Optional[Any] = None
+    tool_used: str | None = None
+    tool_result: Any | None = None
     requires_confirmation: bool = False
-    confirmation_payload: Optional[Dict[str, Any]] = None
+    confirmation_payload: dict[str, Any] | None = None
     audit_id: str
 
 
@@ -54,14 +54,27 @@ async def query_copilot(
     user: UserContext = Depends(require_role(["FLEET_MANAGER", "SUPER_ADMIN"]))
 ):
     query_lower = req.query.lower()
-    tool_to_use: Optional[str] = None
-    tool_args: Dict[str, Any] = req.tool_arguments or {}
+    tool_to_use: str | None = None
+    tool_args: dict[str, Any] = req.tool_arguments or {}
     tool_result: Any = None
     requires_confirmation = False
     confirmation_payload = None
 
     # Step 1: Tool intent routing (Strict Allowlist)
-    if any(k in query_lower for k in ("high risk", "highest risk", "risk", "worst", "critical", "priority")):
+    if req.confirm_action:
+        tool_to_use = "create_maintenance_action"
+        action_req = MaintenanceActionCreateRequest(
+            vehicle_id=tool_args.get("vehicle_id", list(store.vehicles.keys())[0]),
+            action_type=ActionType(tool_args.get("action_type", "THERMAL_SYSTEM_REPAIR")),
+            priority=ActionPriority(tool_args.get("priority", "CRITICAL")),
+            notes=tool_args.get("notes", "Created via Fleet Copilot with user confirmation"),
+            scheduled_for=datetime.now(timezone.utc)
+        )
+        created_action = store.create_maintenance_action(tenant_id=user.tenant_id, req=action_req, user_id=user.user_id)
+        tool_result = created_action.model_dump(mode="json")
+        answer = f"Maintenance action {created_action.id} successfully scheduled and logged to the transactional store."
+
+    elif any(k in query_lower for k in ("high risk", "highest risk", "risk", "worst", "critical", "priority")):
         tool_to_use = "get_high_risk_vehicles"
         vehicles, _ = store.get_vehicles(tenant_id=user.tenant_id, limit=5, severity="CRITICAL")
         if not vehicles:
@@ -122,7 +135,7 @@ async def query_copilot(
         tool_to_use = "get_fleet_summary"
         summary = store.get_fleet_summary(tenant_id=user.tenant_id)
         tool_result = summary.model_dump(mode="json")
-        answer = f"I am Fleet Copilot, restricted to verified fleet operations. I can summarize fleet health, query highest risk vehicles, explain telemetry anomalies, or prepare maintenance work orders with your confirmation."
+        answer = "I am Fleet Copilot, restricted to verified fleet operations. I can summarize fleet health, query highest risk vehicles, explain telemetry anomalies, or prepare maintenance work orders with your confirmation."
 
     # Step 2: Audit Logging
     audit_record = store.record_audit_log(

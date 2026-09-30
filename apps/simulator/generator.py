@@ -5,12 +5,10 @@ Generates reproducible synthetic fleets with VINs, specs, geographic hubs, and s
 
 import hashlib
 import random
-from typing import Dict, List, Optional
 import uuid
 
-from packages.schemas.events import PropulsionType, SeverityLevel, VehicleStatus
 from apps.simulator.physics import VehiclePhysicsState
-
+from packages.schemas.events import PropulsionType, SeverityLevel, VehicleStatus
 
 FLEET_METROS = [
     {"name": "Chicago Metro Hub", "lat": 41.8781, "lon": -87.6298, "radius_deg": 0.4},
@@ -52,7 +50,7 @@ class FleetGenerator:
         self.seed = seed
         self.rng = random.Random(seed)
 
-    def generate_fleet(self, count: int = 100000) -> List[Dict]:
+    def generate_fleet(self, count: int = 100000) -> list[dict]:
         """
         Generates deterministic fleet vehicle metadata for 'count' vehicles.
         """
@@ -112,7 +110,7 @@ class FleetGenerator:
 
         return vehicles
 
-    def create_physics_states(self, vehicles: List[Dict]) -> Dict[str, VehiclePhysicsState]:
+    def create_physics_states(self, vehicles: list[dict]) -> dict[str, VehiclePhysicsState]:
         """Instantiates in-memory physics trackers for vehicles."""
         states = {}
         for v in vehicles:
@@ -126,5 +124,17 @@ class FleetGenerator:
                 odometer_km=v["odometer_km"],
                 seed=self.seed
             )
+            if v["current_severity"] == SeverityLevel.CRITICAL.value:
+                state.active_dtcs.append("P0128" if p_type != PropulsionType.EV else "P0A80")
+                if p_type != PropulsionType.EV:
+                    state.engine_temp_c = 116.0
+                else:
+                    state.battery_temp_c = 58.0
+            elif v["current_severity"] == SeverityLevel.HIGH.value:
+                state.active_dtcs.append("P0420" if p_type != PropulsionType.EV else "P0562")
+                if p_type != PropulsionType.EV:
+                    state.engine_temp_c = 106.0
+                else:
+                    state.battery_temp_c = 48.0
             states[v["id"]] = state
         return states

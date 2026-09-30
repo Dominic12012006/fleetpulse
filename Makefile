@@ -34,7 +34,7 @@ scenario:
 	PYTHONPATH=. $(PYTHON) apps/simulator/runner.py --vehicles 1000 --scenario $(NAME) --duration 15
 
 test:
-	PYTHONPATH=. $(PYTEST) tests/unit/ tests/integration/ tests/contract/
+	PYTHONPATH=. $(PYTEST) tests/unit/ tests/integration/ tests/contract/ tests/acceptance/
 
 lint:
 	$(VENV)/ruff check .

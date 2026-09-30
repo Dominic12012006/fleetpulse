@@ -2,7 +2,7 @@
 FleetPulse Backend API — FastAPI Dependencies & RBAC Enforcement
 """
 
-from typing import List, Optional
+
 from fastapi import Depends, HTTPException, Security, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
@@ -30,7 +30,7 @@ DEFAULT_MANAGER = UserContext(
 
 
 async def get_current_user(
-    credentials: Optional[HTTPAuthorizationCredentials] = Security(security)
+    credentials: HTTPAuthorizationCredentials | None = Security(security)
 ) -> UserContext:
     """
     Validates JWT token and returns authenticated UserContext.
@@ -63,7 +63,7 @@ async def get_current_user(
     return UserContext(user_id=user_id, email=email, role=role, tenant_id=tenant_id)
 
 
-def require_role(allowed_roles: List[str]):
+def require_role(allowed_roles: list[str]):
     """Enforces Role-Based Access Control (RBAC)."""
     async def role_checker(current_user: UserContext = Depends(get_current_user)) -> UserContext:
         if current_user.role not in allowed_roles and current_user.role != "SUPER_ADMIN":

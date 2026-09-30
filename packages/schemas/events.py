@@ -3,10 +3,10 @@ FleetPulse — Canonical Telemetry Event Schema
 Defines the strictly-typed canonical contract across simulator, ingestion, stream processor, and storage.
 """
 
+import uuid
 from datetime import datetime, timezone
 from enum import Enum
-from typing import List, Optional
-import uuid
+
 from pydantic import BaseModel, Field, field_validator
 
 
@@ -64,27 +64,27 @@ class CanonicalTelemetryEvent(BaseModel):
     lat: float = Field(..., ge=-90.0, le=90.0, description="Latitude in decimal degrees")
     lon: float = Field(..., ge=-180.0, le=180.0, description="Longitude in decimal degrees")
     speed_kmh: float = Field(..., ge=0.0, le=300.0, description="Vehicle speed in km/h")
-    heading_deg: Optional[float] = Field(default=0.0, ge=0.0, le=360.0, description="Compass heading 0-360")
+    heading_deg: float | None = Field(default=0.0, ge=0.0, le=360.0, description="Compass heading 0-360")
     odometer_km: float = Field(..., ge=0.0, description="Cumulative odometer reading")
 
     # Powertrain & Diagnostics
     propulsion_type: PropulsionType = Field(default=PropulsionType.ICE)
-    engine_temp_c: Optional[float] = Field(default=None, ge=-40.0, le=200.0, description="Engine coolant temperature (ICE/Hybrid)")
-    battery_temp_c: Optional[float] = Field(default=None, ge=-40.0, le=100.0, description="Battery pack temperature (EV/Hybrid)")
-    soc_pct: Optional[float] = Field(default=None, ge=0.0, le=100.0, description="State of charge 0-100% (EV/Hybrid)")
-    fuel_pct: Optional[float] = Field(default=None, ge=0.0, le=100.0, description="Fuel level 0-100% (ICE/Hybrid)")
-    oil_pressure_kpa: Optional[float] = Field(default=None, ge=0.0, le=1000.0)
-    battery_voltage: Optional[float] = Field(default=None, ge=0.0, le=1000.0)
+    engine_temp_c: float | None = Field(default=None, ge=-40.0, le=200.0, description="Engine coolant temperature (ICE/Hybrid)")
+    battery_temp_c: float | None = Field(default=None, ge=-40.0, le=100.0, description="Battery pack temperature (EV/Hybrid)")
+    soc_pct: float | None = Field(default=None, ge=0.0, le=100.0, description="State of charge 0-100% (EV/Hybrid)")
+    fuel_pct: float | None = Field(default=None, ge=0.0, le=100.0, description="Fuel level 0-100% (ICE/Hybrid)")
+    oil_pressure_kpa: float | None = Field(default=None, ge=0.0, le=1000.0)
+    battery_voltage: float | None = Field(default=None, ge=0.0, le=1000.0)
 
     # Diagnostic Trouble Codes & Event Classification
-    dtc_codes: List[str] = Field(default_factory=list, description="Active OBD-II/UDS diagnostic trouble codes")
+    dtc_codes: list[str] = Field(default_factory=list, description="Active OBD-II/UDS diagnostic trouble codes")
     event_type: EventType = Field(default=EventType.NORMAL, description="Event classification")
     is_anomaly: bool = Field(default=False, description="Flag indicating simulated or detected anomaly")
 
     # Observability & Timestamp Tracing
-    processing_time: Optional[datetime] = Field(default=None, description="Stream processing timestamp")
-    persistence_time: Optional[datetime] = Field(default=None, description="Storage commit timestamp")
-    publish_time: Optional[datetime] = Field(default=None, description="WebSocket broadcast timestamp")
+    processing_time: datetime | None = Field(default=None, description="Stream processing timestamp")
+    persistence_time: datetime | None = Field(default=None, description="Storage commit timestamp")
+    publish_time: datetime | None = Field(default=None, description="WebSocket broadcast timestamp")
 
     @field_validator("vin")
     @classmethod

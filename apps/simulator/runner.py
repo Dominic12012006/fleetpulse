@@ -5,11 +5,8 @@ Capable of generating and dispatching 100K+ events/sec with deterministic physic
 
 import argparse
 import asyncio
-import json
 import logging
-import sys
 import time
-from typing import List, Optional
 
 from apps.simulator.generator import FleetGenerator
 from apps.simulator.scenarios import ScenarioEngine, ScenarioName

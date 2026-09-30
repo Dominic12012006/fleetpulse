@@ -3,14 +3,13 @@ FleetPulse — Chaos & Fault-Injection Resilience Suite
 Tests broker disconnections, network partitions, container failovers, and verifies zero data loss.
 """
 
-from datetime import datetime, timezone
 import json
 import logging
 import os
-import time
-from typing import Any, Dict
+from datetime import datetime, timezone
+from typing import Any
 
-from packages.schemas.events import CanonicalTelemetryEvent, EventType
+from packages.schemas.events import CanonicalTelemetryEvent
 from services.stream_processor.processor import StreamProcessorService
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
@@ -46,12 +45,11 @@ class MockFaultyBroker:
         return flushed
 
 
-def run_chaos_resilience_test() -> Dict[str, Any]:
+def run_chaos_resilience_test() -> dict[str, Any]:
     logger.info("Starting Chaos Resilience Test (Simulating Broker Outage & Recovery)...")
     broker = MockFaultyBroker()
     processor = StreamProcessorService()
 
-    total_events = 1000
     sent_events = 0
     buffered_during_outage = 0
 
@@ -135,7 +133,7 @@ def run_chaos_resilience_test() -> Dict[str, Any]:
     return report
 
 
-def _write_chaos_report(report: Dict[str, Any]) -> None:
+def _write_chaos_report(report: dict[str, Any]) -> None:
     os.makedirs(os.path.dirname(CHAOS_REPORT_PATH), exist_ok=True)
     md = f"""# FleetPulse Chaos & Distributed Resilience Report
 

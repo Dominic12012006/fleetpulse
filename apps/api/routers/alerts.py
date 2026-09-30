@@ -2,20 +2,18 @@
 FleetPulse Backend API — Alerts & Risk Queue Router
 """
 
-from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from apps.api.core.dependencies import UserContext, get_current_user, require_role
 from apps.api.data.store import store
-from packages.schemas.models import AlertDTO
 
 router = APIRouter(prefix="/alerts", tags=["Alerts & Risk Queue"])
 
 
 @router.get("")
 async def list_alerts(
-    status: Optional[str] = Query(None, description="OPEN, ACKNOWLEDGED, RESOLVED"),
-    severity: Optional[str] = Query(None, description="LOW, MEDIUM, HIGH, CRITICAL"),
+    status: str | None = Query(None, description="OPEN, ACKNOWLEDGED, RESOLVED"),
+    severity: str | None = Query(None, description="LOW, MEDIUM, HIGH, CRITICAL"),
     limit: int = Query(50, ge=1, le=200),
     offset: int = Query(0, ge=0),
     user: UserContext = Depends(get_current_user)

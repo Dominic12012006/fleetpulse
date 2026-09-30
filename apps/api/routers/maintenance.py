@@ -2,7 +2,7 @@
 FleetPulse Backend API — Maintenance Work Orders Router
 """
 
-from typing import List, Optional
+
 from fastapi import APIRouter, Depends, Query
 
 from apps.api.core.dependencies import UserContext, get_current_user, require_role
@@ -28,9 +28,9 @@ async def create_maintenance_action(
     return action
 
 
-@router.get("", response_model=List[MaintenanceActionDTO])
+@router.get("", response_model=list[MaintenanceActionDTO])
 async def list_maintenance_actions(
-    status: Optional[str] = Query(None, description="SCHEDULED, IN_PROGRESS, COMPLETED, CANCELLED"),
+    status: str | None = Query(None, description="SCHEDULED, IN_PROGRESS, COMPLETED, CANCELLED"),
     user: UserContext = Depends(get_current_user)
 ):
     actions = store.get_maintenance_actions(

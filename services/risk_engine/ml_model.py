@@ -3,11 +3,12 @@ FleetPulse — Tabular Predictive Risk Model & Evaluation Pipeline
 Trains and evaluates a Gradient-Boosted Tabular Classifier against the deterministic baseline.
 """
 
-from datetime import datetime, timezone
 import json
 import logging
 import os
-from typing import Any, Dict, List, Tuple
+from datetime import datetime, timezone
+from typing import Any
+
 import joblib
 import numpy as np
 from sklearn.ensemble import GradientBoostingClassifier
@@ -43,14 +44,13 @@ FEATURE_NAMES = [
 ]
 
 
-def extract_features(features_dict: Dict[str, Any], is_ev: bool = False) -> List[float]:
+def extract_features(features_dict: dict[str, Any], is_ev: bool = False) -> list[float]:
     """Extracts normalized tabular feature vector."""
     active_dtcs = features_dict.get("active_dtcs", [])
     max_w = 0.0
     for code in active_dtcs:
         w = DTC_WEIGHTS.get(code, {}).get("weight", 0.2)
-        if w > max_w:
-            max_w = w
+        max_w = max(max_w, w)
 
     return [
         float(features_dict.get("temp_slope_c_per_min", 0.0)),
@@ -68,9 +68,9 @@ def extract_features(features_dict: Dict[str, Any], is_ev: bool = False) -> List
 class TabularRiskModel:
     def __init__(self, model_version: str = "v1.1-gradient-boost"):
         self.model_version = model_version
-        self.model: Optional[GradientBoostingClassifier] = None
+        self.model: GradientBoostingClassifier | None = None
 
-    def train_and_evaluate(self, sample_size: int = 4000, seed: int = 42) -> Dict[str, Any]:
+    def train_and_evaluate(self, sample_size: int = 4000, seed: int = 42) -> dict[str, Any]:
         """
         Generates synthetic ground truth across scenarios, performs time-aware split,
         trains the Gradient-Boosted classifier, and compares against the baseline.
@@ -118,7 +118,7 @@ class TabularRiskModel:
 
             vec = extract_features(features, is_ev=(v["propulsion_type"] == "EV"))
             X_rows.append(vec)
-            
+
             # Ground truth: 1 if real impending failure/anomaly occurred
             label = 1 if (scen != ScenarioName.NORMAL or is_anomaly or len(p_state.active_dtcs) > 0) else 0
             y_labels.append(label)
@@ -198,7 +198,7 @@ class TabularRiskModel:
         self._write_markdown_report(report)
         return report
 
-    def _write_markdown_report(self, report: Dict[str, Any]) -> None:
+    def _write_markdown_report(self, report: dict[str, Any]) -> None:
         os.makedirs(os.path.dirname(REPORT_PATH), exist_ok=True)
         md = f"""# FleetPulse ML Evaluation Report: Gradient-Boosted Model vs. Baseline
 

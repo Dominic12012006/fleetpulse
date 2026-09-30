@@ -3,10 +3,10 @@ FleetPulse — Event-Time Stream Processor (Flink Semantics)
 Implements event-time watermarking, late event handling, sliding windows, and idempotent deduplication.
 """
 
+import logging
 from collections import deque
 from datetime import datetime, timedelta, timezone
-import logging
-from typing import Any, Deque, Dict, List, Optional, Set, Tuple
+from typing import Any
 
 from packages.schemas.events import CanonicalTelemetryEvent, EventType
 
@@ -19,7 +19,7 @@ class RollingVehicleWindow:
     def __init__(self, vehicle_id: str, window_duration: timedelta = timedelta(minutes=15)):
         self.vehicle_id = vehicle_id
         self.window_duration = window_duration
-        self.events: Deque[CanonicalTelemetryEvent] = deque()
+        self.events: deque[CanonicalTelemetryEvent] = deque()
 
     def add_event(self, event: CanonicalTelemetryEvent) -> None:
         self.events.append(event)
@@ -30,16 +30,16 @@ class RollingVehicleWindow:
         while self.events and self.events[0].event_time < cutoff:
             self.events.popleft()
 
-    def compute_features(self) -> Dict[str, Any]:
+    def compute_features(self) -> dict[str, Any]:
         """Calculates sliding window aggregate features."""
         if not self.events:
             return {}
 
         latest = self.events[-1]
-        active_dtcs: Set[str] = set()
+        active_dtcs: set[str] = set()
         harsh_events_5m = 0
-        temp_readings: List[Tuple[datetime, float]] = []
-        soc_readings: List[Tuple[datetime, float]] = []
+        temp_readings: list[tuple[datetime, float]] = []
+        soc_readings: list[tuple[datetime, float]] = []
 
         now = latest.event_time
         five_min_cutoff = now - timedelta(minutes=5)
@@ -95,12 +95,12 @@ class RollingVehicleWindow:
 class StreamProcessorService:
     def __init__(self, allowed_lateness_seconds: float = 5.0, dedup_capacity: int = 500000):
         self.allowed_lateness = timedelta(seconds=allowed_lateness_seconds)
-        self.watermark: Optional[datetime] = None
-        self.windows: Dict[str, RollingVehicleWindow] = {}
-        
+        self.watermark: datetime | None = None
+        self.windows: dict[str, RollingVehicleWindow] = {}
+
         # Deduplication cache (LRU set approximation with bounded capacity)
-        self.seen_event_ids: Set[str] = set()
-        self.event_id_queue: Deque[str] = deque()
+        self.seen_event_ids: set[str] = set()
+        self.event_id_queue: deque[str] = deque()
         self.dedup_capacity = dedup_capacity
 
         # Metrics
@@ -123,7 +123,7 @@ class StreamProcessorService:
         if self.watermark is None or new_watermark > self.watermark:
             self.watermark = new_watermark
 
-    def process_event(self, event: CanonicalTelemetryEvent) -> Optional[Dict[str, Any]]:
+    def process_event(self, event: CanonicalTelemetryEvent) -> dict[str, Any] | None:
         """
         Processes a single event through watermark, deduplication, and windowing.
         Returns feature dictionary or None if duplicate.
