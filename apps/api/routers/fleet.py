@@ -18,11 +18,12 @@ async def get_fleet_summary(user: UserContext = Depends(get_current_user)):
 
 @router.get("/vehicles")
 async def list_vehicles(
-    limit: int = Query(50, ge=1, le=500),
+    limit: int = Query(50, ge=1, le=2500),
     offset: int = Query(0, ge=0),
     severity: str | None = Query(None, description="LOW, MEDIUM, HIGH, CRITICAL"),
     status: str | None = Query(None, description="ACTIVE, IN_SERVICE, GROUNDED"),
     query: str | None = Query(None, description="Search by VIN, make, model, license plate"),
+    sort_by: str = Query("stratified", description="stratified, risk, vin"),
     user: UserContext = Depends(get_current_user)
 ):
     vehicles, total = store.get_vehicles(
@@ -31,13 +32,31 @@ async def list_vehicles(
         offset=offset,
         severity=severity,
         status_filter=status,
-        query=query
+        query=query,
+        sort_by=sort_by
     )
     return {
         "items": vehicles,
         "total": total,
         "limit": limit,
         "offset": offset
+    }
+
+
+@router.get("/vehicles/map")
+async def list_vehicles_for_map(
+    limit: int = Query(1200, ge=10, le=5000),
+    severity: str | None = Query(None, description="ALL, LOW, HIGH, CRITICAL"),
+    user: UserContext = Depends(get_current_user)
+):
+    items = store.get_map_vehicles(
+        tenant_id=user.tenant_id,
+        limit=limit,
+        severity=severity
+    )
+    return {
+        "items": items,
+        "total": len(items)
     }
 
 

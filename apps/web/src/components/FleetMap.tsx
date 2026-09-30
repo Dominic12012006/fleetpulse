@@ -74,7 +74,8 @@ export const FleetMap: React.FC<FleetMapProps> = ({
         zoom: 3,
         minZoom: 2,
         maxZoom: 18,
-        zoomControl: false
+        zoomControl: false,
+        preferCanvas: true
       });
 
       // Default: Voyager Tile Layer (rich, colorful, unmistakable geographic map with oceans and highways)
@@ -263,6 +264,7 @@ export const FleetMap: React.FC<FleetMapProps> = ({
 
   const criticalCount = vehicles.filter(v => v.current_severity === 'CRITICAL').length;
   const highCount = vehicles.filter(v => v.current_severity === 'HIGH').length;
+  const lowCount = vehicles.filter(v => v.current_severity === 'LOW' || v.current_severity === 'MEDIUM').length;
 
   return (
     <div className="bg-white border border-[#E5E9F2] rounded-[24px] overflow-hidden shadow-[0_4px_25px_rgba(0,0,0,0.03)] flex flex-col h-[580px] font-sans">
@@ -275,11 +277,11 @@ export const FleetMap: React.FC<FleetMapProps> = ({
           <div>
             <div className="flex items-center space-x-2">
               <h3 className="text-sm font-bold text-slate-900">Live Telemetry Geographic Map</h3>
-              <span className="px-2.5 py-0.5 text-[10px] bg-slate-100 text-slate-700 rounded-full font-mono font-semibold">
-                {vehicles.length} Units Online
+              <span className="px-2.5 py-0.5 text-[10px] bg-blue-50 text-blue-700 border border-blue-200 rounded-full font-mono font-bold">
+                {vehicles.length.toLocaleString()} Units Live
               </span>
             </div>
-            <p className="text-[11px] text-slate-500 font-medium">Real-time global navigation & telematics tracking (No API key needed)</p>
+            <p className="text-[11px] text-slate-500 font-medium">Real-time global navigation & telematics tracking across freight corridors</p>
           </div>
         </div>
 
@@ -302,7 +304,7 @@ export const FleetMap: React.FC<FleetMapProps> = ({
             ))}
           </div>
 
-          {/* Severity Pills */}
+          {/* Severity Pills with live counts */}
           <div className="flex items-center space-x-1 bg-[#F4F6FA] p-1 rounded-full text-xs border border-[#E8ECF2]">
             {['ALL', 'CRITICAL', 'HIGH', 'LOW'].map(sev => (
               <button
@@ -314,9 +316,10 @@ export const FleetMap: React.FC<FleetMapProps> = ({
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                {sev === 'ALL' ? 'All' : sev}
-                {sev === 'CRITICAL' && criticalCount > 0 && ` (${criticalCount})`}
-                {sev === 'HIGH' && highCount > 0 && ` (${highCount})`}
+                {sev === 'ALL' && `All (${vehicles.length})`}
+                {sev === 'CRITICAL' && `Critical (${criticalCount})`}
+                {sev === 'HIGH' && `High (${highCount})`}
+                {sev === 'LOW' && `Low (${lowCount})`}
               </button>
             ))}
           </div>

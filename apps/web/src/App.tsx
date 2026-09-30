@@ -22,6 +22,7 @@ export function App() {
   const [subTab, setSubTab] = useState<string>('summary');
   const [summary, setSummary] = useState<FleetSummary | null>(null);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [mapVehicles, setMapVehicles] = useState<Vehicle[]>([]);
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
 
@@ -37,14 +38,16 @@ export function App() {
   // Initial Data Fetching
   async function loadData() {
     try {
-      const [sumData, vData, aData] = await Promise.all([
+      const [sumData, vData, aData, mapData] = await Promise.all([
         api.getFleetSummary(),
         api.getVehicles(100, 0, severityFilter || undefined, searchQuery || undefined),
-        api.getAlerts(50)
+        api.getAlerts(50),
+        api.getMapVehicles(1200)
       ]);
       setSummary(sumData);
       setVehicles(vData.items);
       setAlerts(aData.items);
+      setMapVehicles(mapData.items);
 
       if (!selectedVehicle && vData.items.length > 0) {
         setSelectedVehicle(vData.items[0]);
@@ -184,7 +187,7 @@ export function App() {
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                 <div className="lg:col-span-7">
                   <FleetMap
-                    vehicles={vehicles}
+                    vehicles={mapVehicles.length > 0 ? mapVehicles : vehicles}
                     onSelectVehicle={(v) => {
                       setSelectedVehicle(v);
                       setActiveTab('vehicles');
@@ -343,7 +346,7 @@ export function App() {
               className="space-y-4"
             >
               <FleetMap
-                vehicles={vehicles}
+                vehicles={mapVehicles.length > 0 ? mapVehicles : vehicles}
                 onSelectVehicle={(v) => {
                   setSelectedVehicle(v);
                   setActiveTab('vehicles');

@@ -156,6 +156,14 @@ export const api = {
     return res.json();
   },
 
+  async getMapVehicles(limit = 1200, severity?: string): Promise<{ items: Vehicle[]; total: number }> {
+    const params = new URLSearchParams({ limit: String(limit) });
+    if (severity && severity !== 'ALL') params.append('severity', severity);
+    const res = await fetch(`${API_BASE}/vehicles/map?${params.toString()}`, { headers: getAuthHeaders() });
+    if (!res.ok) throw new Error('Failed to fetch map vehicles');
+    return res.json();
+  },
+
   async getVehicleDetail(id: string): Promise<Vehicle> {
     const res = await fetch(`${API_BASE}/vehicles/${id}`, { headers: getAuthHeaders() });
     if (!res.ok) throw new Error('Failed to fetch vehicle detail');

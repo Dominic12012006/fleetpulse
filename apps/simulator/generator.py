@@ -72,19 +72,16 @@ class FleetGenerator:
 
             odometer_km = round(v_rng.uniform(4000.0, 185000.0), 1)
 
-            # Initial baseline risk profile
+            # Initial baseline risk profile (realistic balanced fleet distribution)
             risk_roll = v_rng.random()
-            if risk_roll < 0.88:
-                risk_score = round(v_rng.uniform(5.0, 35.0), 1)
+            if risk_roll < 0.76:
+                risk_score = round(v_rng.uniform(5.0, 42.0), 1)
                 severity = SeverityLevel.LOW
-            elif risk_roll < 0.96:
-                risk_score = round(v_rng.uniform(36.0, 65.0), 1)
-                severity = SeverityLevel.MEDIUM
-            elif risk_roll < 0.99:
-                risk_score = round(v_rng.uniform(66.0, 85.0), 1)
+            elif risk_roll < 0.92:
+                risk_score = round(v_rng.uniform(43.0, 78.0), 1)
                 severity = SeverityLevel.HIGH
             else:
-                risk_score = round(v_rng.uniform(86.0, 99.5), 1)
+                risk_score = round(v_rng.uniform(79.0, 99.5), 1)
                 severity = SeverityLevel.CRITICAL
 
             vehicle_record = {
