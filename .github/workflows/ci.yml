@@ -1,0 +1,47 @@
+name: FleetPulse Continuous Integration
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test-and-lint:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+        cache: 'pip'
+
+    - name: Install Python Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install lark email-validator
+
+    - name: Run Ruff Linter
+      run: |
+        ruff check .
+
+    - name: Run Full Test Suite (Unit, Integration, Contract)
+      run: |
+        PYTHONPATH=. pytest tests/unit/ tests/integration/ tests/contract/
+
+    - name: Set up Node 20
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20
+        cache: 'npm'
+        cache-dependency-path: apps/web/package-lock.json
+
+    - name: Install Frontend Dependencies & Build Bundle
+      working-directory: apps/web
+      run: |
+        npm install
+        npm run build

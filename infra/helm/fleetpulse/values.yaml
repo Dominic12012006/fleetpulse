@@ -1,0 +1,50 @@
+replicaCount: 3
+
+image:
+  api:
+    repository: ghcr.io/dominic12012006/fleetpulse-api
+    tag: v1.0.0
+    pullPolicy: IfNotPresent
+  web:
+    repository: ghcr.io/dominic12012006/fleetpulse-web
+    tag: v1.0.0
+    pullPolicy: IfNotPresent
+
+service:
+  api:
+    type: ClusterIP
+    port: 8000
+  web:
+    type: LoadBalancer
+    port: 80
+
+ingress:
+  enabled: true
+  className: "nginx"
+  hosts:
+    - host: fleetpulse.internal
+      paths:
+        - path: /
+          pathType: Prefix
+
+resources:
+  api:
+    limits:
+      cpu: 1000m
+      memory: 1024Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+  web:
+    limits:
+      cpu: 500m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 64Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 15
+  targetCPUUtilizationPercentage: 75

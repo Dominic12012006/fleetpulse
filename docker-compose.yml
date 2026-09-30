@@ -1,0 +1,130 @@
+version: '3.8'
+
+services:
+  # 1. PostgreSQL 16 — OLTP Core Relational Store
+  postgres:
+    image: postgres:16-alpine
+    container_name: fleetpulse-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: fleetpulse
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./infra/docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - fleetpulse-net
+
+  # 2. ClickHouse — Columnar OLAP for High-Velocity Telemetry
+  clickhouse:
+    image: clickhouse/clickhouse-server:24.3-alpine
+    container_name: fleetpulse-clickhouse
+    restart: unless-stopped
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+    volumes:
+      - ./infra/docker/clickhouse/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ch_data:/var/lib/clickhouse
+    networks:
+      - fleetpulse-net
+
+  # 3. Redis 7 — In-Memory Hot State & Event Deduplication
+  redis:
+    image: redis:7-alpine
+    container_name: fleetpulse-redis
+    restart: unless-stopped
+    command: ["redis-server", "--maxmemory", "128mb", "--maxmemory-policy", "allkeys-lru"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - fleetpulse-net
+
+  # 4. Redpanda / Kafka — High-Throughput Streaming Message Broker
+  kafka:
+    image: vectorized/redpanda:v23.3.11
+    container_name: fleetpulse-kafka
+    restart: unless-stopped
+    command:
+      - redpanda start
+      - --smp 1
+      - --memory 512M
+      - --overprovisioned
+      - --kafka-addr PLAINTEXT://0.0.0.0:29092,OUTSIDE://0.0.0.0:9092
+      - --advertise-kafka-addr PLAINTEXT://kafka:29092,OUTSIDE://localhost:9092
+    ports:
+      - "9092:9092"
+      - "9644:9644"
+    volumes:
+      - kafka_data:/var/lib/redpanda/data
+    networks:
+      - fleetpulse-net
+
+  # 5. FleetPulse Backend API Gateway
+  api:
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile.api
+    container_name: fleetpulse-api
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/fleetpulse
+      CLICKHOUSE_HOST: clickhouse
+      CLICKHOUSE_PORT: 8123
+      REDIS_URL: redis://redis:6379/0
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - fleetpulse-net
+
+  # 6. FleetPulse Command Centre Frontend (Nginx SPA)
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+    container_name: fleetpulse-web
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - api
+    networks:
+      - fleetpulse-net
+
+  # 7. Prometheus Metrics Collection
+  prometheus:
+    image: prom/prometheus:v2.51.0
+    container_name: fleetpulse-prometheus
+    restart: unless-stopped
+    volumes:
+      - ./infra/docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+    networks:
+      - fleetpulse-net
+
+volumes:
+  pg_data:
+  ch_data:
+  redis_data:
+  kafka_data:
+
+networks:
+  fleetpulse-net:
+    driver: bridge
