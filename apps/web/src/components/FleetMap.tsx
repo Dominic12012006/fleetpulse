@@ -9,24 +9,33 @@ interface FleetMapProps {
   selectedVehicleId?: string;
 }
 
-const TILE_PROVIDERS = {
-  voyager: {
-    name: 'Voyager Detailed',
-    url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-    subdomains: 'abcd',
-    attribution: '&copy; CARTO &copy; OpenStreetMap'
+interface TileProvider {
+  name: string;
+  url: string;
+  subdomains?: string;
+  maxZoom: number;
+  attribution: string;
+}
+
+const TILE_PROVIDERS: Record<string, TileProvider> = {
+  streets: {
+    name: 'Navigation Roads',
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+    maxZoom: 19,
+    attribution: '&copy; Esri &mdash; High-definition global navigation telematics'
   },
   osm: {
     name: 'OpenStreetMap',
     url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
     subdomains: 'abc',
+    maxZoom: 19,
     attribution: '&copy; OpenStreetMap contributors'
   },
-  light: {
-    name: 'CartoDB Light',
-    url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-    subdomains: 'abcd',
-    attribution: '&copy; CARTO &copy; OpenStreetMap'
+  canvas: {
+    name: 'Clean Canvas',
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+    maxZoom: 16,
+    attribution: '&copy; Esri, HERE, Garmin'
   }
 };
 
@@ -51,7 +60,7 @@ export const FleetMap: React.FC<FleetMapProps> = ({
   const tileLayerRef = useRef<L.TileLayer | null>(null);
   const markersLayerRef = useRef<L.LayerGroup | null>(null);
 
-  const [activeTileKey, setActiveTileKey] = useState<keyof typeof TILE_PROVIDERS>('voyager');
+  const [activeTileKey, setActiveTileKey] = useState<keyof typeof TILE_PROVIDERS>('streets');
   const [filterSeverity, setFilterSeverity] = useState<string>('ALL');
   const [activeHub, setActiveHub] = useState<string>('all');
 
@@ -72,8 +81,8 @@ export const FleetMap: React.FC<FleetMapProps> = ({
       const tileConfig = TILE_PROVIDERS[activeTileKey];
       const tileLayer = L.tileLayer(tileConfig.url, {
         attribution: tileConfig.attribution,
-        subdomains: tileConfig.subdomains,
-        maxZoom: 19
+        subdomains: tileConfig.subdomains || 'abc',
+        maxZoom: tileConfig.maxZoom || 19
       }).addTo(map);
 
       tileLayerRef.current = tileLayer;
@@ -116,8 +125,8 @@ export const FleetMap: React.FC<FleetMapProps> = ({
     const tileConfig = TILE_PROVIDERS[activeTileKey];
     tileLayerRef.current = L.tileLayer(tileConfig.url, {
       attribution: tileConfig.attribution,
-      subdomains: tileConfig.subdomains,
-      maxZoom: 19
+      subdomains: tileConfig.subdomains || 'abc',
+      maxZoom: tileConfig.maxZoom || 19
     }).addTo(mapInstanceRef.current);
   }, [activeTileKey]);
 
@@ -268,7 +277,7 @@ export const FleetMap: React.FC<FleetMapProps> = ({
                 {vehicles.length} Units Online
               </span>
             </div>
-            <p className="text-[11px] text-slate-500 font-medium">CartoDB Voyager real-time global navigation & telematics tracking</p>
+            <p className="text-[11px] text-slate-500 font-medium">Real-time global navigation & telematics tracking (No API key needed)</p>
           </div>
         </div>
 
@@ -286,7 +295,7 @@ export const FleetMap: React.FC<FleetMapProps> = ({
                     : 'text-slate-500 hover:text-slate-800'
                 }`}
               >
-                {key === 'voyager' ? 'Voyager' : key === 'osm' ? 'Roads' : 'Light'}
+                {key === 'streets' ? 'Streets' : key === 'osm' ? 'OpenStreetMap' : 'Light Canvas'}
               </button>
             ))}
           </div>
