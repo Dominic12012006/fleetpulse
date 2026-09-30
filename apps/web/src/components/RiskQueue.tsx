@@ -21,7 +21,7 @@ export const RiskQueue: React.FC<RiskQueueProps> = ({
 
   return (
     <div className="bg-white border border-[#E5E9F2] rounded-[24px] overflow-hidden shadow-[0_4px_25px_rgba(0,0,0,0.03)] font-sans">
-      {/* Syncrowave Header */}
+      {/* FleetPulse Header */}
       <div className="px-6 py-4 border-b border-[#F0F3F8] flex items-center justify-between">
         <div className="flex items-center space-x-3">
           <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">

@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { SyncrowaveNavbar } from './components/SyncrowaveNavbar';
-import { SyncrowaveHeader } from './components/SyncrowaveHeader';
-import { SyncrowaveCards } from './components/SyncrowaveCards';
-import { SyncrowaveCharts } from './components/SyncrowaveCharts';
+import { FleetNavbar } from './components/FleetNavbar';
+import { FleetHeader } from './components/FleetHeader';
+import { FleetOverviewCards } from './components/FleetOverviewCards';
+import { FleetDistributionCharts } from './components/FleetDistributionCharts';
 import { FleetMap } from './components/FleetMap';
 import { RiskQueue } from './components/RiskQueue';
 import { VehicleDetail } from './components/VehicleDetail';
@@ -142,7 +142,7 @@ export function App() {
   return (
     <div className="min-h-screen bg-[#F4F6FA] text-slate-800 font-sans antialiased overflow-x-hidden selection:bg-blue-600 selection:text-white">
       {/* Top Floating Pill Navigation Bar matching Dribbble shot */}
-      <SyncrowaveNavbar
+      <FleetNavbar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         user={session}
@@ -166,19 +166,19 @@ export function App() {
               className="space-y-7"
             >
               {/* Header Title with Sub-tabs and Export button */}
-              <SyncrowaveHeader
-                title="Sales Overview"
-                subtitle="Let's see the current statistic performance."
+              <FleetHeader
+                title="Fleet Operations Overview"
+                subtitle="Real-time multi-OEM telematics, Flink event-time windowing, and predictive ML risk prioritization."
                 subTab={subTab}
                 setSubTab={setSubTab}
                 onExportData={handleExportData}
               />
 
-              {/* Row 1: The 3 Highlight Cards (Overall Revenue, Total Insight, Finance Balance) */}
-              <SyncrowaveCards summary={summary} />
+              {/* Row 1: The 3 Highlight Cards (Fleet Reliability, Active Units, SLA & Health) */}
+              <FleetOverviewCards summary={summary} />
 
-              {/* Row 2: The Two Syncrowave Visual Charts (Sales Summary Bubble Matrix + Sales Category Radial Arc) */}
-              <SyncrowaveCharts />
+              {/* Row 2: The Two Visual Charts (Telemetry Ingestion Bubble Matrix + Propulsion & Risk Radial Arc) */}
+              <FleetDistributionCharts />
 
               {/* Row 3: Live Telemetry Geo-Map & Prioritized Risk Queue */}
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">

@@ -27,7 +27,7 @@ export const HeroMetrics: React.FC<HeroMetricsProps> = ({ summary }) => {
 
   return (
     <div className="space-y-4 font-sans">
-      {/* Syncrowave Hero Gradient Banner Card */}
+      {/* FleetPulse Hero Gradient Banner Card */}
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-sky-900/40 via-indigo-950/60 to-slate-900 border border-sky-500/20 p-6 sm:p-7 shadow-xl backdrop-blur-xl">
         {/* Ambient background decorative glow */}
         <div className="absolute top-0 right-0 w-96 h-96 bg-sky-500/10 rounded-full blur-3xl pointer-events-none" />
@@ -37,7 +37,7 @@ export const HeroMetrics: React.FC<HeroMetricsProps> = ({ summary }) => {
           <div className="space-y-2 max-w-xl">
             <div className="flex items-center space-x-2">
               <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-sky-500/20 text-sky-300 border border-sky-500/30">
-                SyncroWave Operational Telematics
+                FleetPulse Operational Telematics
               </span>
               <span className="text-xs text-slate-400 font-mono">100,000 Fleet Deployment</span>
             </div>
@@ -83,7 +83,7 @@ export const HeroMetrics: React.FC<HeroMetricsProps> = ({ summary }) => {
         </div>
       </div>
 
-      {/* Row of Syncrowave-Style Companion Metric Cards */}
+      {/* Row of FleetPulse Companion Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Card 1: Active Vehicles */}
         <div className="bg-slate-900/90 border border-slate-800/80 rounded-2xl p-4 shadow-sm hover:border-slate-700/80 transition-all flex flex-col justify-between">

@@ -129,7 +129,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
         transition={{ duration: 0.25, ease: 'easeOut' }}
         className="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-12 gap-8 items-center z-10 my-4"
       >
-        {/* Left Side: Syncrowave Branding & Value Props */}
+        {/* Left Side: FleetPulse Branding & Value Props */}
         <div className="lg:col-span-6 space-y-6 px-2 sm:px-4">
           <div className="flex items-center space-x-3">
             <div className="w-12 h-12 rounded-2xl bg-black text-white flex items-center justify-center shadow-lg">
@@ -137,9 +137,9 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             </div>
             <div>
               <div className="flex items-center space-x-2">
-                <span className="text-2xl font-black tracking-tight text-slate-900 font-sans">Syncrowave</span>
+                <span className="text-2xl font-black tracking-tight text-slate-900 font-sans">FleetPulse</span>
                 <span className="px-2.5 py-0.5 text-[10px] uppercase font-bold tracking-wider bg-blue-50 text-blue-600 border border-blue-200 rounded-full">
-                  FleetPulse v2.2
+                  v2.2
                 </span>
               </div>
               <p className="text-xs text-slate-500 font-medium">Connected Vehicle Intelligence Platform</p>
@@ -155,7 +155,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             </p>
           </div>
 
-          {/* Syncrowave Gradient Card Highlight */}
+          {/* FleetPulse Gradient Card Highlight */}
           <div className="p-6 rounded-[24px] bg-gradient-to-tr from-[#2563EB] via-[#3B82F6] to-[#60A5FA] text-white shadow-xl shadow-blue-500/10 space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-blue-100">Live Production Ingestion</span>

@@ -6,13 +6,13 @@ import {
   LogOut, 
   User, 
   Flame, 
-  Bot, 
   Sparkles,
+  ShieldCheck,
   ChevronDown
 } from 'lucide-react';
 import { UserSession } from '../services/api';
 
-interface SyncrowaveNavbarProps {
+interface FleetNavbarProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
   user: UserSession;
@@ -22,7 +22,7 @@ interface SyncrowaveNavbarProps {
   onOpenScenarios: () => void;
 }
 
-export const SyncrowaveNavbar: React.FC<SyncrowaveNavbarProps> = ({
+export const FleetNavbar: React.FC<FleetNavbarProps> = ({
   activeTab,
   setActiveTab,
   user,
@@ -58,7 +58,7 @@ export const SyncrowaveNavbar: React.FC<SyncrowaveNavbarProps> = ({
           </div>
           <div>
             <span className="text-base font-extrabold tracking-tight text-slate-900 font-sans">
-              Syncrowave <span className="text-blue-600 font-normal">FleetPulse</span>
+              FleetPulse <span className="text-blue-600 font-semibold text-xs uppercase tracking-wider ml-0.5">Telematics</span>
             </span>
           </div>
         </div>
@@ -90,9 +90,9 @@ export const SyncrowaveNavbar: React.FC<SyncrowaveNavbarProps> = ({
           })}
         </div>
 
-        {/* Right Utilities: Search, Bell, Chaos Lab, Copilot, User */}
+        {/* Right Utilities: Chaos Lab, Copilot, Notification Bell, User Profile */}
         <div className="flex items-center space-x-2.5 shrink-0">
-          {/* Chaos Lab Preset */}
+          {/* Chaos Lab Injector */}
           <button
             onClick={onOpenScenarios}
             title="Inject Chaos Scenario"
@@ -102,7 +102,7 @@ export const SyncrowaveNavbar: React.FC<SyncrowaveNavbarProps> = ({
             <span className="hidden lg:inline">Chaos Lab</span>
           </button>
 
-          {/* Copilot Trigger */}
+          {/* Copilot Assistant Trigger */}
           <button
             onClick={onOpenCopilot}
             className="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-sm transition-all"
@@ -113,7 +113,11 @@ export const SyncrowaveNavbar: React.FC<SyncrowaveNavbarProps> = ({
 
           {/* Notification Bell */}
           <div className="relative">
-            <button className="w-9 h-9 rounded-full bg-[#F4F6FA] hover:bg-slate-100 border border-[#E8ECF2] flex items-center justify-center text-slate-600 transition-colors">
+            <button 
+              onClick={() => setActiveTab('queue')}
+              title={`${openAlertsCount} Active Fleet Alerts`}
+              className="w-9 h-9 rounded-full bg-[#F4F6FA] hover:bg-slate-100 border border-[#E8ECF2] flex items-center justify-center text-slate-600 transition-colors"
+            >
               <Bell className="w-4 h-4" />
               {openAlertsCount > 0 && (
                 <span className="w-2 h-2 rounded-full bg-rose-500 absolute top-2 right-2 ring-2 ring-white" />

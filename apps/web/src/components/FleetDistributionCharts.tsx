@@ -1,8 +1,11 @@
-import React from 'react';
-import { ArrowUpRight, ChevronDown, MoreHorizontal, TrendingUp } from 'lucide-react';
+import React, { useState } from 'react';
+import { ArrowUpRight, ChevronDown, MoreHorizontal, TrendingUp, Cpu, Zap } from 'lucide-react';
 
-export const SyncrowaveCharts: React.FC = () => {
-  // Dot matrix columns data for the 12 months
+export const FleetDistributionCharts: React.FC = () => {
+  const [selectedCorridor, setSelectedCorridor] = useState('All Freight Corridors');
+  const [selectedMetric, setSelectedMetric] = useState('Hourly EPS');
+
+  // Dot matrix columns data for the 12 months (mimicking the Dribbble shot aesthetic)
   const monthsData = [
     { month: 'Jan', blueCount: 2, lightCount: 1 },
     { month: 'Feb', blueCount: 3, lightCount: 2 },
@@ -18,12 +21,12 @@ export const SyncrowaveCharts: React.FC = () => {
     { month: 'Dec', blueCount: 8, lightCount: 4 },
   ];
 
-  // Radial arc ticks (around 32 tick lines across a 180-degree semicircular arc)
+  // Radial arc ticks (34 tick lines across a 180-degree semicircular arc)
   const totalTicks = 34;
   const ticks = Array.from({ length: totalTicks }, (_, i) => {
-    // Angle from -180 deg to 0 deg (or 180 to 0)
+    // Angle from -180 deg to 0 deg
     const angle = Math.PI - (i / (totalTicks - 1)) * Math.PI;
-    const rOuter = 100;
+    const rOuter = 102;
     const rInner = 74;
     const cx = 130;
     const cy = 115;
@@ -32,7 +35,7 @@ export const SyncrowaveCharts: React.FC = () => {
     const x2 = cx + rOuter * Math.cos(angle);
     const y2 = cy - rOuter * Math.sin(angle);
 
-    // Color gradient across the ticks: blue -> cyan -> soft lavender
+    // Color gradient across the ticks matching Dribbble shot: deep blue -> light blue -> slate
     const ratio = i / totalTicks;
     let stroke = '#1D4ED8';
     if (ratio > 0.65) stroke = '#E2E8F0';
@@ -44,36 +47,39 @@ export const SyncrowaveCharts: React.FC = () => {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 font-sans">
-      {/* Left Card: Sales Summary (Bubble Matrix Columns Chart) */}
+      {/* Left Card: Telemetry Ingestion Volume (Bubble Matrix Columns Chart matching Dribbble template) */}
       <div className="lg:col-span-8 bg-white border border-[#E5E9F2] rounded-[24px] p-6 shadow-[0_4px_25px_rgba(0,0,0,0.03)] flex flex-col justify-between">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
           <div className="space-y-1">
-            <h3 className="text-base font-bold text-slate-900">Sales Summary</h3>
+            <h3 className="text-base font-bold text-slate-900">Telemetry Ingestion Volume</h3>
             <div className="flex items-center space-x-3 text-xs text-slate-500 font-medium">
               <div className="flex items-center space-x-1.5">
                 <span className="w-2.5 h-2.5 rounded-full bg-blue-600" />
-                <span>Sales</span>
+                <span>Kafka Event Stream</span>
               </div>
               <div className="flex items-center space-x-1.5">
                 <span className="w-2.5 h-2.5 rounded-full bg-blue-200" />
-                <span>Insight</span>
+                <span>Flink Window Cache</span>
               </div>
             </div>
           </div>
 
           <div className="flex items-center space-x-2">
-            <button className="flex items-center space-x-1.5 px-3 py-1.5 bg-[#F4F6FA] hover:bg-slate-100 border border-[#E8ECF2] rounded-full text-xs font-semibold text-slate-700 transition-colors">
-              <span>This Year</span>
-              <ChevronDown className="w-3.5 h-3.5" />
-            </button>
+            <div className="px-3 py-1.5 bg-[#F4F6FA] border border-[#E8ECF2] rounded-full text-xs font-semibold text-slate-700 flex items-center space-x-1">
+              <span>{selectedCorridor}</span>
+              <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+            </div>
 
-            <button className="flex items-center space-x-1.5 px-3 py-1.5 bg-[#F4F6FA] hover:bg-slate-100 border border-[#E8ECF2] rounded-full text-xs font-semibold text-slate-700 transition-colors">
-              <span>Summary</span>
-              <ChevronDown className="w-3.5 h-3.5" />
-            </button>
+            <div className="px-3 py-1.5 bg-[#F4F6FA] border border-[#E8ECF2] rounded-full text-xs font-semibold text-slate-700 flex items-center space-x-1">
+              <span>{selectedMetric}</span>
+              <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+            </div>
 
-            <button className="w-8 h-8 rounded-full bg-[#F4F6FA] hover:bg-slate-100 border border-[#E8ECF2] flex items-center justify-center text-slate-600">
+            <button 
+              title="More ingestion options"
+              className="w-8 h-8 rounded-full bg-[#F4F6FA] hover:bg-slate-100 border border-[#E8ECF2] flex items-center justify-center text-slate-600 transition-colors"
+            >
               <MoreHorizontal className="w-4 h-4" />
             </button>
           </div>
@@ -107,18 +113,18 @@ export const SyncrowaveCharts: React.FC = () => {
 
           {/* Stacked Dot Columns */}
           <div className="absolute inset-x-0 bottom-6 left-12 right-4 flex items-end justify-between px-2">
-            {monthsData.map((col, idx) => (
+            {monthsData.map((col) => (
               <div key={col.month} className="flex flex-col items-center group relative cursor-pointer">
-                {/* July Tooltip Bubble (as shown in the Dribbble shot) */}
+                {/* July Tooltip Bubble (as shown in Dribbble reference) */}
                 {col.isHovered && (
                   <div className="absolute -top-16 bg-white border border-[#E2E8F0] shadow-lg rounded-xl px-2.5 py-1.5 text-[10px] font-semibold text-slate-800 z-20 whitespace-nowrap animate-in fade-in zoom-in-95 pointer-events-none">
                     <div className="flex items-center space-x-1.5">
                       <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />
-                      <span>Sales: <strong>70,901</strong></span>
+                      <span>Kafka Stream: <strong>70,901 EPS</strong></span>
                     </div>
                     <div className="flex items-center space-x-1.5 mt-0.5">
                       <span className="w-1.5 h-1.5 rounded-full bg-blue-300" />
-                      <span>Insight: <strong>92,921</strong></span>
+                      <span>Flink Cache: <strong>92,921 Evt/s</strong></span>
                     </div>
                   </div>
                 )}
@@ -144,7 +150,7 @@ export const SyncrowaveCharts: React.FC = () => {
             ))}
           </div>
 
-          {/* X Axis Labels */}
+          {/* X Axis Month Labels */}
           <div className="flex justify-between pl-12 pr-4 pt-2 text-[11px] font-medium text-slate-500">
             {monthsData.map(m => (
               <span key={m.month} className={m.isHovered ? 'text-blue-600 font-bold' : ''}>
@@ -155,12 +161,18 @@ export const SyncrowaveCharts: React.FC = () => {
         </div>
       </div>
 
-      {/* Right Card: Sales Category (Radial Arc Meter) */}
+      {/* Right Card: Fleet Propulsion & Risk Segment (Radial Arc Meter matching Dribbble template) */}
       <div className="lg:col-span-4 bg-white border border-[#E5E9F2] rounded-[24px] p-6 shadow-[0_4px_25px_rgba(0,0,0,0.03)] flex flex-col justify-between min-h-[360px]">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <h3 className="text-base font-bold text-slate-900">Sales Category</h3>
-          <button className="w-8 h-8 rounded-full bg-slate-50 hover:bg-slate-100 text-slate-700 flex items-center justify-center transition-colors">
+          <div>
+            <h3 className="text-base font-bold text-slate-900">Propulsion & Risk Category</h3>
+            <p className="text-[11px] text-slate-500 font-medium">Fleet breakdown by powertrain</p>
+          </div>
+          <button 
+            title="Inspect Powertrain Distribution"
+            className="w-8 h-8 rounded-full bg-slate-50 hover:bg-slate-100 text-slate-700 flex items-center justify-center transition-colors"
+          >
             <ArrowUpRight className="w-4 h-4" />
           </button>
         </div>
@@ -187,8 +199,8 @@ export const SyncrowaveCharts: React.FC = () => {
             <div className="text-3xl font-black tracking-tight text-slate-900 font-sans">
               8,214
             </div>
-            <div className="text-[11px] text-slate-400 font-medium">
-              Product sales
+            <div className="text-[11px] text-slate-500 font-semibold uppercase tracking-wider">
+              Nominal Fleet Units
             </div>
           </div>
         </div>
@@ -197,22 +209,22 @@ export const SyncrowaveCharts: React.FC = () => {
         <div className="flex items-center justify-center space-x-4 text-[11px] text-slate-500 font-medium my-2">
           <div className="flex items-center space-x-1.5">
             <span className="w-2.5 h-2.5 rounded-full bg-blue-600" />
-            <span>Ecommerce</span>
+            <span>Heavy EV (3,450)</span>
           </div>
           <div className="flex items-center space-x-1.5">
             <span className="w-2.5 h-2.5 rounded-full bg-blue-300" />
-            <span>Brand Ambassador</span>
+            <span>Hybrid (2,850)</span>
           </div>
           <div className="flex items-center space-x-1.5">
             <span className="w-2.5 h-2.5 rounded-full bg-slate-300" />
-            <span>Direct Buy</span>
+            <span>Clean ICE (3,700)</span>
           </div>
         </div>
 
-        {/* Bottom Green Pill Chip */}
-        <div className="mt-2 py-2 px-3 rounded-full bg-emerald-50 text-emerald-600 text-xs font-semibold flex items-center justify-center space-x-1.5">
-          <TrendingUp className="w-3.5 h-3.5" />
-          <span>+12.2% You sold 2,921 items compared to last month</span>
+        {/* Bottom Green Pill Chip matching Dribbble template */}
+        <div className="mt-2 py-2 px-3 rounded-full bg-emerald-50 text-emerald-700 text-xs font-semibold flex items-center justify-center space-x-1.5 border border-emerald-100">
+          <TrendingUp className="w-3.5 h-3.5 text-emerald-600" />
+          <span>+12.2% Predictive downtime avoided vs prior cycle</span>
         </div>
       </div>
     </div>

@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import L from 'leaflet';
 import { Vehicle } from '../services/api';
-import { Navigation, Info, ArrowUpRight, Zap, Filter } from 'lucide-react';
+import { Compass, ZoomIn, ZoomOut, Layers, MapPin, AlertTriangle, ShieldCheck, RefreshCw } from 'lucide-react';
 
 interface FleetMapProps {
   vehicles: Vehicle[];
@@ -8,257 +9,374 @@ interface FleetMapProps {
   selectedVehicleId?: string;
 }
 
+const TILE_PROVIDERS = {
+  voyager: {
+    name: 'Voyager Detailed',
+    url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+    subdomains: 'abcd',
+    attribution: '&copy; CARTO &copy; OpenStreetMap'
+  },
+  osm: {
+    name: 'OpenStreetMap',
+    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    subdomains: 'abc',
+    attribution: '&copy; OpenStreetMap contributors'
+  },
+  light: {
+    name: 'CartoDB Light',
+    url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+    subdomains: 'abcd',
+    attribution: '&copy; CARTO &copy; OpenStreetMap'
+  }
+};
+
+const HUBS = [
+  { id: 'all', name: 'Global Corridor', lat: 39.5, lon: -45.0, zoom: 3 },
+  { id: 'chicago', name: 'Chicago Hub', lat: 41.8781, lon: -87.6298, zoom: 10 },
+  { id: 'dallas', name: 'Dallas Logistics', lat: 32.7767, lon: -96.7970, zoom: 10 },
+  { id: 'atlanta', name: 'Atlanta Distribution', lat: 33.7490, lon: -84.3880, zoom: 10 },
+  { id: 'la', name: 'Los Angeles Port', lat: 34.0522, lon: -118.2437, zoom: 10 },
+  { id: 'newyork', name: 'New York Gateway', lat: 40.7128, lon: -74.0060, zoom: 10 },
+  { id: 'frankfurt', name: 'Frankfurt Central', lat: 50.1109, lon: 8.6821, zoom: 10 },
+  { id: 'rotterdam', name: 'Rotterdam Port', lat: 51.9244, lon: 4.4777, zoom: 10 }
+];
+
 export const FleetMap: React.FC<FleetMapProps> = ({
   vehicles,
   onSelectVehicle,
   selectedVehicleId
 }) => {
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const mapInstanceRef = useRef<L.Map | null>(null);
+  const tileLayerRef = useRef<L.TileLayer | null>(null);
+  const markersLayerRef = useRef<L.LayerGroup | null>(null);
+
+  const [activeTileKey, setActiveTileKey] = useState<keyof typeof TILE_PROVIDERS>('voyager');
   const [filterSeverity, setFilterSeverity] = useState<string>('ALL');
-  const [hoveredVehicle, setHoveredVehicle] = useState<Vehicle | null>(null);
+  const [activeHub, setActiveHub] = useState<string>('all');
 
-  // Filter vehicles
-  const displayedVehicles = vehicles.filter(v => {
-    if (filterSeverity === 'ALL') return true;
-    return v.current_severity === filterSeverity;
-  });
+  // Initialize Map
+  useEffect(() => {
+    if (!mapContainerRef.current) return;
 
-  // Accurate SVG 1000x550 Projection Mapping
-  // US & European Metro Hubs: Lon [-125, 15], Lat [25, 58]
-  const getMapCoordinates = (lat: number, lon: number) => {
-    const clampedLon = Math.max(-125, Math.min(15, lon));
-    const clampedLat = Math.max(25, Math.min(58, lat));
+    if (!mapInstanceRef.current) {
+      const map = L.map(mapContainerRef.current, {
+        center: [39.5, -45.0],
+        zoom: 3,
+        minZoom: 2,
+        maxZoom: 18,
+        zoomControl: false
+      });
+
+      // Default: Voyager Tile Layer (rich, colorful, unmistakable geographic map with oceans and highways)
+      const tileConfig = TILE_PROVIDERS[activeTileKey];
+      const tileLayer = L.tileLayer(tileConfig.url, {
+        attribution: tileConfig.attribution,
+        subdomains: tileConfig.subdomains,
+        maxZoom: 19
+      }).addTo(map);
+
+      tileLayerRef.current = tileLayer;
+
+      // Layer group for vehicle markers
+      const markersLayer = L.layerGroup().addTo(map);
+      markersLayerRef.current = markersLayer;
+      mapInstanceRef.current = map;
+
+      // Force recalculation of container size after DOM layout settles
+      setTimeout(() => {
+        map.invalidateSize();
+      }, 150);
+    }
+
+    // Resize observer to ensure tiles are never gray or clipped
+    const resizeObserver = new ResizeObserver(() => {
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.invalidateSize();
+      }
+    });
+
+    resizeObserver.observe(mapContainerRef.current);
+
+    return () => {
+      resizeObserver.disconnect();
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove();
+        mapInstanceRef.current = null;
+      }
+    };
+  }, []);
+
+  // Update Tile Layer if user toggles basemap
+  useEffect(() => {
+    if (!mapInstanceRef.current) return;
+    if (tileLayerRef.current) {
+      mapInstanceRef.current.removeLayer(tileLayerRef.current);
+    }
+    const tileConfig = TILE_PROVIDERS[activeTileKey];
+    tileLayerRef.current = L.tileLayer(tileConfig.url, {
+      attribution: tileConfig.attribution,
+      subdomains: tileConfig.subdomains,
+      maxZoom: 19
+    }).addTo(mapInstanceRef.current);
+  }, [activeTileKey]);
+
+  // Update Markers when vehicles, filters, or selected vehicle changes
+  useEffect(() => {
+    if (!mapInstanceRef.current || !markersLayerRef.current) return;
+
+    markersLayerRef.current.clearLayers();
+
+    const filtered = vehicles.filter(v => {
+      if (filterSeverity === 'ALL') return true;
+      return v.current_severity === filterSeverity;
+    });
+
+    filtered.forEach(v => {
+      if (!v.lat || !v.lon) return;
+
+      const isSelected = v.id === selectedVehicleId;
+      const isCritical = v.current_severity === 'CRITICAL';
+      const isHigh = v.current_severity === 'HIGH';
+
+      let fillColor = '#2563EB'; // Royal Blue
+      let strokeColor = '#FFFFFF';
+      let radius = 6;
+      let fillOpacity = 0.85;
+
+      if (isCritical) {
+        fillColor = '#EF4444';
+        radius = 9;
+        fillOpacity = 0.95;
+
+        // Render an animated pulse halo ring for CRITICAL vehicles
+        const pulseRing = L.circleMarker([v.lat, v.lon], {
+          radius: 16,
+          fillColor: '#EF4444',
+          fillOpacity: 0.25,
+          color: '#DC2626',
+          weight: 1.5,
+          className: 'animate-ping'
+        });
+        pulseRing.addTo(markersLayerRef.current!);
+      } else if (isHigh) {
+        fillColor = '#F59E0B';
+        radius = 7;
+        fillOpacity = 0.9;
+      }
+
+      if (isSelected) {
+        radius = 11;
+        strokeColor = '#0F172A';
+      }
+
+      // Main Circle Marker with high-contrast border
+      const marker = L.circleMarker([v.lat, v.lon], {
+        radius: radius,
+        fillColor: fillColor,
+        color: strokeColor,
+        weight: isSelected ? 3 : 2,
+        opacity: 1,
+        fillOpacity: fillOpacity
+      });
+
+      // Hover Tooltip with vehicle specs
+      marker.bindTooltip(
+        `<div style="font-family: inherit; font-size: 11px; padding: 2px;">
+          <div style="font-weight: bold; color: #0F172A;">${v.vin}</div>
+          <div style="color: ${fillColor}; font-weight: 600; font-size: 10px;">${v.current_severity} • ${v.make} ${v.model}</div>
+          <div style="color: #64748B; font-size: 10px;">Speed: ${v.speed_kmh} km/h • Risk: ${v.current_risk_score}</div>
+        </div>`,
+        { direction: 'top', offset: [0, -8], opacity: 0.98 }
+      );
+
+      // Popup Content on click
+      const popupHtml = `
+        <div style="font-family: inherit; padding: 6px; min-width: 210px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <span style="font-family: monospace; font-weight: bold; font-size: 12px; color: #0F172A;">${v.vin}</span>
+            <span style="background: ${isCritical ? '#FEE2E2' : isHigh ? '#FEF3C7' : '#EFF6FF'}; color: ${isCritical ? '#DC2626' : isHigh ? '#D97706' : '#2563EB'}; padding: 2px 7px; border-radius: 9999px; font-size: 10px; font-weight: bold;">
+              ${v.current_severity}
+            </span>
+          </div>
+          <div style="font-size: 11px; color: #475569; margin-bottom: 6px;">
+            ${v.make} ${v.model} (${v.year}) • <span style="font-weight: 600;">${v.propulsion_type}</span>
+          </div>
+          <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 6px; font-size: 11px; font-family: monospace; color: #334155; margin-bottom: 8px; line-height: 1.5;">
+            <div>Speed: <strong>${v.speed_kmh} km/h</strong></div>
+            <div>Temp: <strong>${v.engine_temp_c || v.battery_temp_c || 90}°C</strong></div>
+            <div>Risk Score: <strong>${v.current_risk_score} / 100</strong></div>
+            ${v.active_dtcs && v.active_dtcs.length > 0 ? `<div style="color: #DC2626; margin-top: 3px;">Active DTCs: <strong>${v.active_dtcs.join(', ')}</strong></div>` : ''}
+          </div>
+          <button id="inspect-btn-${v.id}" style="width: 100%; padding: 7px; background: #0F172A; color: #FFFFFF; font-size: 11px; font-weight: 600; border-radius: 8px; border: none; cursor: pointer; transition: background 0.15s ease;">
+            Inspect Vehicle Diagnostics
+          </button>
+        </div>
+      `;
+
+      marker.bindPopup(popupHtml);
+
+      marker.on('popupopen', () => {
+        const btn = document.getElementById(`inspect-btn-${v.id}`);
+        if (btn) {
+          btn.onclick = () => onSelectVehicle(v);
+        }
+      });
+
+      marker.on('click', () => {
+        onSelectVehicle(v);
+      });
+
+      marker.addTo(markersLayerRef.current!);
+    });
+  }, [vehicles, filterSeverity, selectedVehicleId]);
+
+  function handleHubJump(hub: typeof HUBS[0]) {
+    setActiveHub(hub.id);
+    if (mapInstanceRef.current) {
+      mapInstanceRef.current.flyTo([hub.lat, hub.lon], hub.zoom, { duration: 1.2 });
+    }
+  }
+
+  function handleFitAllVehicles() {
+    if (!mapInstanceRef.current || vehicles.length === 0) return;
+    const validCoords = vehicles
+      .filter(v => v.lat && v.lon)
+      .map(v => [v.lat, v.lon] as [number, number]);
     
-    // X mapped from 50 to 950
-    const x = ((clampedLon - (-125)) / (15 - (-125))) * 900 + 50;
-    // Y inverted: 50 (North Europe) to 480 (South US)
-    const y = 490 - (((clampedLat - 25) / (58 - 25)) * 430 + 30);
-    return { x, y };
-  };
+    if (validCoords.length > 0) {
+      const bounds = L.latLngBounds(validCoords);
+      mapInstanceRef.current.fitBounds(bounds, { padding: [50, 50], maxZoom: 8 });
+    }
+  }
 
   const criticalCount = vehicles.filter(v => v.current_severity === 'CRITICAL').length;
   const highCount = vehicles.filter(v => v.current_severity === 'HIGH').length;
 
   return (
-    <div className="bg-white border border-[#E5E9F2] rounded-[24px] overflow-hidden shadow-[0_4px_25px_rgba(0,0,0,0.03)] flex flex-col h-[520px] font-sans">
-      {/* Header controls matching Syncrowave style */}
-      <div className="px-6 py-4 border-b border-[#F0F3F8] flex items-center justify-between">
+    <div className="bg-white border border-[#E5E9F2] rounded-[24px] overflow-hidden shadow-[0_4px_25px_rgba(0,0,0,0.03)] flex flex-col h-[580px] font-sans">
+      {/* Map Header with Geographic Controls & Basemap Switcher */}
+      <div className="px-6 py-4 border-b border-[#F0F3F8] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
-            <Navigation className="w-4 h-4" />
+          <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shadow-xs">
+            <Compass className="w-4 h-4" />
           </div>
           <div>
             <div className="flex items-center space-x-2">
-              <h3 className="text-sm font-bold text-slate-900">Live Telemetry Geo-Map</h3>
-              <span className="px-2 py-0.5 text-[10px] bg-slate-100 text-slate-700 rounded-full font-mono font-medium">
-                {displayedVehicles.length} plotted
+              <h3 className="text-sm font-bold text-slate-900">Live Telemetry Geographic Map</h3>
+              <span className="px-2.5 py-0.5 text-[10px] bg-slate-100 text-slate-700 rounded-full font-mono font-semibold">
+                {vehicles.length} Units Online
               </span>
             </div>
-            <p className="text-[11px] text-slate-500">Real-time GPS tracking across trans-Atlantic fleet corridors</p>
+            <p className="text-[11px] text-slate-500 font-medium">CartoDB Voyager real-time global navigation & telematics tracking</p>
           </div>
         </div>
 
-        {/* Filter Pill Tabs */}
-        <div className="flex items-center space-x-1 bg-[#F4F6FA] p-1 rounded-full text-xs">
-          {['ALL', 'CRITICAL', 'HIGH', 'LOW'].map(sev => (
-            <button
-              key={sev}
-              onClick={() => setFilterSeverity(sev)}
-              className={`px-3 py-1.5 rounded-full text-[11px] font-semibold transition-all ${
-                filterSeverity === sev
-                  ? 'bg-slate-900 text-white shadow-sm'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              {sev === 'ALL' ? 'All Units' : sev}
-              {sev === 'CRITICAL' && criticalCount > 0 && ` (${criticalCount})`}
-            </button>
-          ))}
+        {/* Severity Filter Pills & Layer Switcher */}
+        <div className="flex items-center space-x-2">
+          {/* Basemap Style Toggle */}
+          <div className="hidden md:flex items-center bg-[#F4F6FA] p-1 rounded-full text-[11px] border border-[#E8ECF2]">
+            {(Object.keys(TILE_PROVIDERS) as Array<keyof typeof TILE_PROVIDERS>).map(key => (
+              <button
+                key={key}
+                onClick={() => setActiveTileKey(key)}
+                className={`px-2.5 py-1 rounded-full font-medium transition-all ${
+                  activeTileKey === key
+                    ? 'bg-white text-slate-900 shadow-xs font-semibold'
+                    : 'text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                {key === 'voyager' ? 'Voyager' : key === 'osm' ? 'Roads' : 'Light'}
+              </button>
+            ))}
+          </div>
+
+          {/* Severity Pills */}
+          <div className="flex items-center space-x-1 bg-[#F4F6FA] p-1 rounded-full text-xs border border-[#E8ECF2]">
+            {['ALL', 'CRITICAL', 'HIGH', 'LOW'].map(sev => (
+              <button
+                key={sev}
+                onClick={() => setFilterSeverity(sev)}
+                className={`px-3 py-1 rounded-full text-[11px] font-semibold transition-all ${
+                  filterSeverity === sev
+                    ? 'bg-slate-900 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                {sev === 'ALL' ? 'All' : sev}
+                {sev === 'CRITICAL' && criticalCount > 0 && ` (${criticalCount})`}
+                {sev === 'HIGH' && highCount > 0 && ` (${highCount})`}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* Interactive Map Visual Surface */}
-      <div className="relative flex-1 bg-[#F8FAFC] overflow-hidden">
-        {/* Subtle Map Grid Lines */}
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#E2E8F0_1px,transparent_1px),linear-gradient(to_bottom,#E2E8F0_1px,transparent_1px)] bg-[size:48px_48px] opacity-40" />
-
-        {/* SVG Viewport with 1000x550 space */}
-        <svg 
-          viewBox="0 0 1000 550" 
-          className="w-full h-full absolute inset-0"
-          preserveAspectRatio="xMidYMid meet"
-        >
-          <defs>
-            {/* Soft Radial Gradients for Hub Areas */}
-            <radialGradient id="hubGlowUS" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#3B82F6" stopOpacity="0.12" />
-              <stop offset="100%" stopColor="#3B82F6" stopOpacity="0" />
-            </radialGradient>
-            <radialGradient id="hubGlowEU" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#4F46E5" stopOpacity="0.12" />
-              <stop offset="100%" stopColor="#4F46E5" stopOpacity="0" />
-            </radialGradient>
-          </defs>
-
-          {/* Hub Region Ambient Areas */}
-          <circle cx="210" cy="310" r="140" fill="url(#hubGlowUS)" />
-          <circle cx="480" cy="230" r="110" fill="url(#hubGlowUS)" />
-          <circle cx="850" cy="130" r="100" fill="url(#hubGlowEU)" />
-
-          {/* Inter-Hub Logistics Flight / Freight Corridor Vectors */}
-          <path
-            d="M 120 330 Q 300 240, 480 230 T 630 180 T 850 130"
-            fill="none"
-            stroke="#CBD5E1"
-            strokeWidth="1.5"
-            strokeDasharray="4 4"
-            className="opacity-70"
-          />
-          <path
-            d="M 450 380 Q 470 300, 480 230"
-            fill="none"
-            stroke="#CBD5E1"
-            strokeWidth="1.5"
-            strokeDasharray="3 3"
-            className="opacity-70"
-          />
-
-          {/* Hub Region Labels */}
-          <g className="select-none font-mono text-[11px] font-bold fill-slate-400">
-            <text x="75" y="360">PORT OF LOS ANGELES</text>
-            <text x="440" y="415">DALLAS LOGISTICS</text>
-            <text x="450" y="210">CHICAGO METRO HUB</text>
-            <text x="610" y="165">NEW YORK GATEWAY</text>
-            <text x="800" y="105">FRANKFURT / ROTTERDAM</text>
-          </g>
-
-          {/* Hub Anchor Indicators */}
-          {[
-            { x: 105, y: 340, name: 'LAX' },
-            { x: 470, y: 395, name: 'DFW' },
-            { x: 480, y: 225, name: 'ORD' },
-            { x: 625, y: 175, name: 'JFK' },
-            { x: 865, y: 125, name: 'FRA' }
-          ].map(hub => (
-            <g key={hub.name} transform={`translate(${hub.x}, ${hub.y})`}>
-              <circle r="6" fill="#3B82F6" fillOpacity="0.2" />
-              <circle r="3" fill="#2563EB" />
-            </g>
-          ))}
-
-          {/* Plotted Vehicles using exact cx / cy numeric coordinates */}
-          {displayedVehicles.slice(0, 150).map(v => {
-            const { x, y } = getMapCoordinates(v.lat, v.lon);
-            const isSelected = v.id === selectedVehicleId;
-            const isCritical = v.current_severity === 'CRITICAL';
-            const isHigh = v.current_severity === 'HIGH';
-
-            let fill = '#3B82F6'; // Syncrowave primary Blue
-            if (isCritical) fill = '#EF4444'; // Rose / Red
-            else if (isHigh) fill = '#F59E0B'; // Amber
-
-            return (
-              <g 
-                key={v.id} 
-                className="cursor-pointer transition-transform hover:scale-125"
-                onClick={() => onSelectVehicle(v)}
-                onMouseEnter={() => setHoveredVehicle(v)}
-                onMouseLeave={() => setHoveredVehicle(null)}
-              >
-                {/* Critical ping ring */}
-                {isCritical && (
-                  <circle
-                    cx={x}
-                    cy={y}
-                    r="14"
-                    fill="#EF4444"
-                    fillOpacity="0.25"
-                  >
-                    <animate
-                      attributeName="r"
-                      values="6;16;6"
-                      dur="2s"
-                      repeatCount="indefinite"
-                    />
-                    <animate
-                      attributeName="fill-opacity"
-                      values="0.3;0;0.3"
-                      dur="2s"
-                      repeatCount="indefinite"
-                    />
-                  </circle>
-                )}
-
-                {/* Outer focus halo */}
-                {isSelected && (
-                  <circle
-                    cx={x}
-                    cy={y}
-                    r="9"
-                    fill="none"
-                    stroke="#1E293B"
-                    strokeWidth="2"
-                    strokeDasharray="2 2"
-                  />
-                )}
-
-                {/* Core Vehicle Pin */}
-                <circle
-                  cx={x}
-                  cy={y}
-                  r={isSelected ? 6 : isCritical ? 5 : 3.8}
-                  fill={fill}
-                  stroke="#FFFFFF"
-                  strokeWidth="1.5"
-                />
-              </g>
-            );
-          })}
-        </svg>
-
-        {/* Hovered Vehicle Inspection Card Popup */}
-        {hoveredVehicle && (
-          <div 
-            className="absolute top-4 left-4 bg-white/95 border border-[#E2E8F0] rounded-2xl p-3.5 shadow-xl backdrop-blur-md z-30 pointer-events-none w-64 animate-in fade-in zoom-in-95 duration-150"
+      {/* Hub Quick-Jump Bar */}
+      <div className="px-6 py-2.5 bg-[#F8FAFC] border-b border-[#F0F3F8] flex items-center space-x-2 overflow-x-auto text-xs">
+        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 shrink-0 font-mono">
+          Corridor Hubs:
+        </span>
+        {HUBS.map(hub => (
+          <button
+            key={hub.id}
+            onClick={() => handleHubJump(hub)}
+            className={`px-3 py-1 rounded-full text-[11px] font-medium transition-all shrink-0 ${
+              activeHub === hub.id
+                ? 'bg-blue-600 text-white shadow-xs font-semibold'
+                : 'bg-white border border-[#E2E8F0] text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+            }`}
           >
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-900 font-mono">{hoveredVehicle.vin}</span>
-              <span className={`px-2 py-0.5 text-[9px] font-bold rounded-full ${
-                hoveredVehicle.current_severity === 'CRITICAL' ? 'bg-red-50 text-red-600' :
-                hoveredVehicle.current_severity === 'HIGH' ? 'bg-amber-50 text-amber-600' : 'bg-blue-50 text-blue-600'
-              }`}>
-                {hoveredVehicle.current_severity}
-              </span>
-            </div>
-            <div className="text-xs text-slate-600 mt-1">
-              {hoveredVehicle.make} {hoveredVehicle.model} ({hoveredVehicle.propulsion_type})
-            </div>
-            <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] font-mono text-slate-500">
-              <span>Risk: <strong className="text-slate-900">{hoveredVehicle.current_risk_score}</strong></span>
-              <span>Speed: <strong className="text-slate-900">{hoveredVehicle.speed_kmh} km/h</strong></span>
-            </div>
-          </div>
-        )}
+            {hub.name}
+          </button>
+        ))}
 
-        {/* Bottom Status Legend matching Syncrowave style */}
-        <div className="absolute bottom-4 left-4 bg-white/90 border border-[#E2E8F0] px-4 py-2.5 rounded-full text-[11px] font-medium flex items-center space-x-4 text-slate-600 shadow-sm backdrop-blur-md">
+        <button
+          onClick={handleFitAllVehicles}
+          title="Fit view to all vehicles"
+          className="ml-auto px-2.5 py-1 rounded-full text-[11px] font-medium text-slate-600 bg-white border border-[#E2E8F0] hover:bg-slate-50 flex items-center space-x-1 shrink-0"
+        >
+          <RefreshCw className="w-3 h-3 text-slate-500" />
+          <span>Fit All</span>
+        </button>
+      </div>
+
+      {/* Real Map Surface */}
+      <div className="relative flex-1 w-full h-full min-h-[360px]">
+        <div ref={mapContainerRef} className="w-full h-full" />
+
+        {/* Map Floating Legend matching Dribbble aesthetic */}
+        <div className="absolute bottom-4 left-4 z-[400] bg-white/95 border border-[#E2E8F0] px-4 py-2.5 rounded-2xl text-[11px] font-medium flex items-center space-x-4 text-slate-700 shadow-md backdrop-blur-md">
           <div className="flex items-center space-x-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />
+            <span className="w-2.5 h-2.5 rounded-full bg-blue-600" />
             <span>Nominal Fleet</span>
           </div>
           <div className="flex items-center space-x-1.5">
             <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
-            <span>Elevated Risk (60-79)</span>
+            <span>Elevated Risk</span>
           </div>
           <div className="flex items-center space-x-1.5">
             <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse" />
-            <span>Critical Grounding (&gt;80)</span>
+            <span>Critical Grounding</span>
           </div>
         </div>
 
-        {/* Map Tip */}
-        <div className="absolute bottom-4 right-4 bg-white/90 border border-[#E2E8F0] px-3 py-2 rounded-full text-[10px] font-medium text-slate-500 flex items-center space-x-1.5 shadow-sm backdrop-blur-md">
-          <Info className="w-3.5 h-3.5 text-blue-500" />
-          <span>Click any vehicle beacon to open component telemetry</span>
+        {/* Zoom Controls */}
+        <div className="absolute top-4 right-4 z-[400] flex flex-col space-y-1.5">
+          <button
+            onClick={() => mapInstanceRef.current?.zoomIn()}
+            title="Zoom In"
+            className="w-8 h-8 rounded-xl bg-white border border-[#E2E8F0] text-slate-700 hover:bg-slate-50 flex items-center justify-center shadow-md transition-colors"
+          >
+            <ZoomIn className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => mapInstanceRef.current?.zoomOut()}
+            title="Zoom Out"
+            className="w-8 h-8 rounded-xl bg-white border border-[#E2E8F0] text-slate-700 hover:bg-slate-50 flex items-center justify-center shadow-md transition-colors"
+          >
+            <ZoomOut className="w-4 h-4" />
+          </button>
         </div>
       </div>
     </div>

@@ -82,7 +82,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <div className="flex items-center space-x-1.5">
                 <span className="text-base font-black tracking-tight text-white font-mono">FleetPulse</span>
               </div>
-              <span className="text-[10px] text-slate-500 font-mono tracking-wider uppercase block">SyncroWave Telematics</span>
+              <span className="text-[10px] text-slate-500 font-mono tracking-wider uppercase block">Enterprise Telematics</span>
             </div>
           </div>
         </div>
@@ -158,7 +158,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </nav>
       </div>
 
-      {/* Syncrowave User Profile Footer */}
+      {/* FleetPulse User Profile Footer */}
       <div className="p-3.5 border-t border-slate-800/80 bg-slate-950/40">
         <div className="p-2.5 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between shadow-sm">
           <div className="flex items-center space-x-2.5 min-w-0">
