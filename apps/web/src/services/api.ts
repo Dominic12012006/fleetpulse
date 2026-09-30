@@ -95,9 +95,54 @@ export interface AuditLog {
   created_at: string;
 }
 
+export interface UserSession {
+  access_token: string;
+  user_id: string;
+  name: string;
+  email: string;
+  role: 'SUPER_ADMIN' | 'FLEET_MANAGER' | 'DISPATCHER' | 'SAFETY_OFFICER' | 'TECHNICIAN';
+  tenant_id: string;
+}
+
+function getAuthHeaders(extraHeaders: Record<string, string> = {}): Record<string, string> {
+  const token = localStorage.getItem('fleetpulse_token');
+  const headers: Record<string, string> = { ...extraHeaders };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  return headers;
+}
+
 export const api = {
+  async login(email: string, password: string, role?: string): Promise<UserSession> {
+    const res = await fetch(`${API_BASE}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password, role })
+    });
+    if (!res.ok) throw new Error('Invalid authentication credentials');
+    const session: UserSession = await res.json();
+    localStorage.setItem('fleetpulse_token', session.access_token);
+    localStorage.setItem('fleetpulse_user', JSON.stringify(session));
+    return session;
+  },
+
+  logout(): void {
+    localStorage.removeItem('fleetpulse_token');
+    localStorage.removeItem('fleetpulse_user');
+  },
+
+  getStoredSession(): UserSession | null {
+    try {
+      const data = localStorage.getItem('fleetpulse_user');
+      return data ? JSON.parse(data) : null;
+    } catch {
+      return null;
+    }
+  },
+
   async getFleetSummary(): Promise<FleetSummary> {
-    const res = await fetch(`${API_BASE}/fleet/summary`);
+    const res = await fetch(`${API_BASE}/fleet/summary`, { headers: getAuthHeaders() });
     if (!res.ok) throw new Error('Failed to fetch fleet summary');
     return res.json();
   },
@@ -106,25 +151,25 @@ export const api = {
     const params = new URLSearchParams({ limit: String(limit), offset: String(offset) });
     if (severity) params.append('severity', severity);
     if (query) params.append('query', query);
-    const res = await fetch(`${API_BASE}/vehicles?${params.toString()}`);
+    const res = await fetch(`${API_BASE}/vehicles?${params.toString()}`, { headers: getAuthHeaders() });
     if (!res.ok) throw new Error('Failed to fetch vehicles');
     return res.json();
   },
 
   async getVehicleDetail(id: string): Promise<Vehicle> {
-    const res = await fetch(`${API_BASE}/vehicles/${id}`);
+    const res = await fetch(`${API_BASE}/vehicles/${id}`, { headers: getAuthHeaders() });
     if (!res.ok) throw new Error('Failed to fetch vehicle detail');
     return res.json();
   },
 
   async getVehicleRisk(id: string): Promise<RiskExplanation> {
-    const res = await fetch(`${API_BASE}/vehicles/${id}/risk`);
+    const res = await fetch(`${API_BASE}/vehicles/${id}/risk`, { headers: getAuthHeaders() });
     if (!res.ok) throw new Error('Failed to fetch vehicle risk');
     return res.json();
   },
 
   async getVehicleTimeline(id: string, points = 30): Promise<{ timeline: any[] }> {
-    const res = await fetch(`${API_BASE}/vehicles/${id}/timeline?points=${points}`);
+    const res = await fetch(`${API_BASE}/vehicles/${id}/timeline?points=${points}`, { headers: getAuthHeaders() });
     if (!res.ok) throw new Error('Failed to fetch timeline');
     return res.json();
   },
@@ -132,13 +177,16 @@ export const api = {
   async getAlerts(limit = 50, status?: string): Promise<{ items: Alert[]; total: number }> {
     const params = new URLSearchParams({ limit: String(limit) });
     if (status) params.append('status', status);
-    const res = await fetch(`${API_BASE}/alerts?${params.toString()}`);
+    const res = await fetch(`${API_BASE}/alerts?${params.toString()}`, { headers: getAuthHeaders() });
     if (!res.ok) throw new Error('Failed to fetch alerts');
     return res.json();
   },
 
   async acknowledgeAlert(alertId: string): Promise<any> {
-    const res = await fetch(`${API_BASE}/alerts/${alertId}/ack`, { method: 'POST' });
+    const res = await fetch(`${API_BASE}/alerts/${alertId}/ack`, {
+      method: 'POST',
+      headers: getAuthHeaders()
+    });
     if (!res.ok) throw new Error('Failed to acknowledge alert');
     return res.json();
   },
@@ -153,7 +201,7 @@ export const api = {
   }): Promise<MaintenanceAction> {
     const res = await fetch(`${API_BASE}/maintenance-actions`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify(payload)
     });
     if (!res.ok) throw new Error('Failed to schedule maintenance');
@@ -161,31 +209,31 @@ export const api = {
   },
 
   async getMaintenanceActions(): Promise<MaintenanceAction[]> {
-    const res = await fetch(`${API_BASE}/maintenance-actions`);
+    const res = await fetch(`${API_BASE}/maintenance-actions`, { headers: getAuthHeaders() });
     if (!res.ok) throw new Error('Failed to fetch maintenance actions');
     return res.json();
   },
 
   async getAuditLogs(): Promise<AuditLog[]> {
-    const res = await fetch(`${API_BASE}/audit`);
+    const res = await fetch(`${API_BASE}/audit`, { headers: getAuthHeaders() });
     if (!res.ok) throw new Error('Failed to fetch audit logs');
     return res.json();
   },
 
   async getAnalyticsRiskDistribution(): Promise<any> {
-    const res = await fetch(`${API_BASE}/analytics/risk-distribution`);
+    const res = await fetch(`${API_BASE}/analytics/risk-distribution`, { headers: getAuthHeaders() });
     if (!res.ok) throw new Error('Failed to fetch risk distribution');
     return res.json();
   },
 
   async getAnalyticsLeadTime(): Promise<any> {
-    const res = await fetch(`${API_BASE}/analytics/lead-time`);
+    const res = await fetch(`${API_BASE}/analytics/lead-time`, { headers: getAuthHeaders() });
     if (!res.ok) throw new Error('Failed to fetch lead time');
     return res.json();
   },
 
   async getAnalyticsOEMBreakdown(): Promise<any> {
-    const res = await fetch(`${API_BASE}/analytics/oem-breakdown`);
+    const res = await fetch(`${API_BASE}/analytics/oem-breakdown`, { headers: getAuthHeaders() });
     if (!res.ok) throw new Error('Failed to fetch OEM breakdown');
     return res.json();
   },
@@ -193,7 +241,7 @@ export const api = {
   async queryCopilot(query: string, confirm = false, toolArgs?: any): Promise<any> {
     const res = await fetch(`${API_BASE}/copilot/query`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({ query, confirm_action: confirm, tool_arguments: toolArgs })
     });
     if (!res.ok) throw new Error('Copilot query failed');
@@ -203,7 +251,7 @@ export const api = {
   async injectScenario(scenario: string): Promise<any> {
     const res = await fetch(`${API_BASE}/demo/scenario`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({ scenario })
     });
     if (!res.ok) throw new Error('Failed to trigger scenario');

@@ -15,33 +15,47 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 class LoginRequest(BaseModel):
     email: str
     password: str
+    role: str | None = None
 
 
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     user_id: str
+    name: str
     email: str
     role: str
     tenant_id: str
 
 
+ROLE_NAMES = {
+    "SUPER_ADMIN": "Alex Mercer (Super Admin)",
+    "FLEET_MANAGER": "Dominic Vance (Fleet Operations)",
+    "DISPATCHER": "Elena Rostova (Lead Dispatcher)",
+    "SAFETY_OFFICER": "Marcus Chen (Safety & Compliance)",
+    "TECHNICIAN": "David Miller (Diagnostic Specialist)"
+}
+
+
 @router.post("/login", response_model=TokenResponse)
 async def login(credentials: LoginRequest):
-    # Standard demo login check
-    if credentials.email == "manager@fleetpulse.io" and credentials.password == "FleetPulse2026!":
-        user_id = "a1b2c3d4-0000-0000-0000-000000000001"
-        role = "FLEET_MANAGER"
-        tenant_id = settings.DEFAULT_TENANT_ID
-    elif credentials.email == "admin@fleetpulse.io":
-        user_id = "a1b2c3d4-0000-0000-0000-000000000000"
+    # Map personas by email or explicit role override
+    if credentials.role and credentials.role in ROLE_NAMES:
+        role = credentials.role
+    elif "admin" in credentials.email.lower():
         role = "SUPER_ADMIN"
-        tenant_id = settings.DEFAULT_TENANT_ID
+    elif "dispatch" in credentials.email.lower():
+        role = "DISPATCHER"
+    elif "safety" in credentials.email.lower():
+        role = "SAFETY_OFFICER"
+    elif "tech" in credentials.email.lower():
+        role = "TECHNICIAN"
     else:
-        # Permissive demo login for any registered username
-        user_id = "a1b2c3d4-0000-0000-0000-000000000001"
         role = "FLEET_MANAGER"
-        tenant_id = settings.DEFAULT_TENANT_ID
+
+    user_id = f"user-{role.lower().replace('_', '-')}-01"
+    name = ROLE_NAMES.get(role, "Fleet Operator")
+    tenant_id = settings.DEFAULT_TENANT_ID
 
     token = create_access_token(
         data={
@@ -55,6 +69,7 @@ async def login(credentials: LoginRequest):
     return TokenResponse(
         access_token=token,
         user_id=user_id,
+        name=name,
         email=credentials.email,
         role=role,
         tenant_id=tenant_id

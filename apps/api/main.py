@@ -7,9 +7,8 @@ from datetime import datetime, timezone
 
 from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse, Response
 from prometheus_client import CONTENT_TYPE_LATEST, Counter, Histogram, generate_latest
-from starlette.responses import Response
 
 from apps.api.core.config import settings
 from apps.api.routers import (
@@ -31,9 +30,14 @@ app = FastAPI(
     version="1.0.0",
     description="Connected Vehicle Intelligence Platform — Telemetry Ingestion, Predictive Fleet Reliability & Command Centre API",
     openapi_url=f"{settings.API_V1_STR}/openapi.json",
-    docs_url=f"{settings.API_V1_STR}/docs",
-    redoc_url=f"{settings.API_V1_STR}/redoc"
+    docs_url="/docs",
+    redoc_url="/redoc"
 )
+
+
+@app.get("/api/v1/docs", include_in_schema=False)
+async def api_v1_docs_redirect():
+    return RedirectResponse(url="/docs")
 
 # CORS Middleware
 app.add_middleware(
